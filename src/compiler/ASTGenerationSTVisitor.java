@@ -59,30 +59,68 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitTimesDiv(TimesDivContext c) {					//to finish
 		if (print) printVarAndProdName(c);
-		Node n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
-		n.setLine(c.TIMES().getSymbol().getLine());		// setLine added
-        return n;		
+		Node n = null;
+		if(c.TIMES()!=null) {
+			n=new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.TIMES().getSymbol().getLine());		// setLine added
+		}else if (c.DIV()!=null) {
+			n=new DivNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.DIV().getSymbol().getLine());		// setLine added
+		}
+		return n;		
 	}
 
 	@Override
 	public Node visitPlusMinus(PlusMinusContext c) {				//to finish
 		if (print) printVarAndProdName(c);
-		Node n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
-		n.setLine(c.PLUS().getSymbol().getLine());	
-        return n;		
+		Node n = null;
+		if(c.PLUS()!=null) {
+			n=new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.PLUS().getSymbol().getLine());		// setLine added
+		}else if (c.MINUS()!=null) {
+			n=new DivNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.MINUS().getSymbol().getLine());		// setLine added
+		}
+		return n;
 	}
 
 	@Override
 	public Node visitComp(CompContext c) {							//to finish
 		if (print) printVarAndProdName(c);
-		Node n = new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
-		n.setLine(c.EQ().getSymbol().getLine());		
-        return n;		
+		Node n = null;
+		if(c.EQ()!=null) {
+			n=new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.EQ().getSymbol().getLine());		// setLine added
+		}else if (c.GE()!=null) {
+			n=new GreaterEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.GE().getSymbol().getLine());		// setLine added
+		}else if (c.LE()!=null) {
+			n=new LessEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.LE().getSymbol().getLine());		// setLine added
+		}
+		return n;		
 	}
 
 	public Node visitAndOr(AndOrContext c) {						//to finish
-		return null;
-		
+		if (print) printVarAndProdName(c);
+		Node n = null;
+		if(c.AND()!=null) {
+			n=new AndNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.AND().getSymbol().getLine());		// setLine added
+		}else if (c.OR()!=null) {
+			n=new OrNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.OR().getSymbol().getLine());		// setLine added
+		}
+		return n;
+	}
+	
+	@Override
+	public Node visitNot(NotContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = new NotNode(visit(c.exp()));
+		n.setLine(c.NOT().getSymbol().getLine());		// setLine added
+
+		return n;
 	}
 	//////////////////////////////////////////////////////////////////////////////
 	@Override
