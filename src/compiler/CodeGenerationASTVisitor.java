@@ -148,7 +148,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"push 1",
 			l2+":"
 		);
-	}@Override
+	}
+	
+	@Override
 	public String visitNode(LessEqualNode n) {
 		if (print) printNode(n);
 	 	String l1 = freshLabel();
@@ -163,8 +165,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"push 1",
 			l2+":"
 		);
-	}@Override
+	}
 	
+	@Override
 	public String visitNode(NotNode n) {
 		if (print) printNode(n);
 		return nlJoin(
@@ -174,7 +177,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"push 1",
 			"add"
 		);
-	}@Override
+	}
+
+	@Override
 	public String visitNode(MinusNode n) {
 		if (print) printNode(n);
 		return nlJoin(
@@ -193,11 +198,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			visit(n.left),
 			visit(n.right),
 			"beq "+l1,	//Se sono uguali salto direttamente a l1 
-			"push 1"
+			"push 1",
 			l1+":",
 			"push 0",
 			"beq"+l2,
-			"push 1"
+			"push 1",
 			l2+":"
 		);
 	}
