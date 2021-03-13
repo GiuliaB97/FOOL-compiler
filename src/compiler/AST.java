@@ -88,63 +88,6 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
-////////////////////////////////////YOUR NODES
-	public static class GreaterEqualNode extends Node {
-		final Node left;
-		final Node right;
-		GreaterEqualNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-	
-	public static class LessEqualNode extends Node {
-		final Node left;
-		final Node right;
-		LessEqualNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-	
-	
-	public static class OrNode extends Node {
-		final Node left;
-		final Node right;
-		OrNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-	
-	public static class AndNode extends Node {
-		final Node left;
-		final Node right;
-		AndNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}	
-	
-	public static class DivNode extends Node {
-		final Node left;
-		final Node right;
-		DivNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-
-	
-	public static class MinusNode extends Node {
-		final Node left;
-		final Node right;
-		MinusNode(Node l, Node r) {left = l; right = r;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-////////////////////////////////////////////////////////////	
 	
 	public static class TimesNode extends Node {
 		final Node left;
@@ -163,7 +106,70 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
+	//////////////////////////////////////////////////// LANGUAGE EXTENSION NODES
 	
+	public static class GreaterEqualNode extends Node {
+		final Node left;
+		final Node right;
+		GreaterEqualNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class LessEqualNode extends Node {
+		final Node left;
+		final Node right;
+		LessEqualNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class NotNode extends Node {
+		final Node val;
+		NotNode(Node n) {val = n;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class MinusNode extends Node {
+		final Node left;
+		final Node right;
+		MinusNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class OrNode extends Node {
+		final Node left;
+		final Node right;
+		OrNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class DivNode extends Node {
+		final Node left;
+		final Node right;
+		DivNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class AndNode extends Node {
+		final Node left;
+		final Node right;
+		AndNode(Node l, Node r) {left = l; right = r;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	///////////////////////////////////////////////////
 	public static class CallNode extends Node {
 		final String id;
 		final List<Node> arglist;
@@ -203,15 +209,6 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
-	//////////////////////YOUR NODE
-	public static class NotNode extends Node {
-		final Integer val;
-		NotNode(Integer n) {val = n;}
-
-		@Override
-		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
-	}
-	////////////////////////
 	
 	public static class ArrowTypeNode extends TypeNode {
 		final List<TypeNode> parlist;
