@@ -31,6 +31,18 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitNoDecProg(FOOLParser.NoDecProgContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link FOOLParser#cldec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCldec(FOOLParser.CldecContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FOOLParser#methdec}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitMethdec(FOOLParser.MethdecContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code vardec}
 	 * labeled alternative in {@link FOOLParser#dec}.
 	 * @param ctx the parse tree
@@ -45,26 +57,26 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitFundec(FOOLParser.FundecContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code call}
+	 * Visit a parse tree produced by the {@code new}
 	 * labeled alternative in {@link FOOLParser#exp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitCall(FOOLParser.CallContext ctx);
+	T visitNew(FOOLParser.NewContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code print}
+	 * Visit a parse tree produced by the {@code comp}
 	 * labeled alternative in {@link FOOLParser#exp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPrint(FOOLParser.PrintContext ctx);
+	T visitComp(FOOLParser.CompContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code times}
+	 * Visit a parse tree produced by the {@code plusMinus}
 	 * labeled alternative in {@link FOOLParser#exp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitTimes(FOOLParser.TimesContext ctx);
+	T visitPlusMinus(FOOLParser.PlusMinusContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code pars}
 	 * labeled alternative in {@link FOOLParser#exp}.
@@ -72,13 +84,6 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitPars(FOOLParser.ParsContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code true}
-	 * labeled alternative in {@link FOOLParser#exp}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitTrue(FOOLParser.TrueContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code false}
 	 * labeled alternative in {@link FOOLParser#exp}.
@@ -94,6 +99,55 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitInteger(FOOLParser.IntegerContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code call}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCall(FOOLParser.CallContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code timesDiv}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTimesDiv(FOOLParser.TimesDivContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code andOr}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitAndOr(FOOLParser.AndOrContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code not}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNot(FOOLParser.NotContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code print}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitPrint(FOOLParser.PrintContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code null}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitNull(FOOLParser.NullContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code true}
+	 * labeled alternative in {@link FOOLParser#exp}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitTrue(FOOLParser.TrueContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code id}
 	 * labeled alternative in {@link FOOLParser#exp}.
 	 * @param ctx the parse tree
@@ -101,12 +155,12 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitId(FOOLParser.IdContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code eq}
+	 * Visit a parse tree produced by the {@code dotCall}
 	 * labeled alternative in {@link FOOLParser#exp}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitEq(FOOLParser.EqContext ctx);
+	T visitDotCall(FOOLParser.DotCallContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code if}
 	 * labeled alternative in {@link FOOLParser#exp}.
@@ -115,12 +169,19 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitIf(FOOLParser.IfContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code plus}
-	 * labeled alternative in {@link FOOLParser#exp}.
+	 * Visit a parse tree produced by the {@code baseType}
+	 * labeled alternative in {@link FOOLParser#hotype}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitPlus(FOOLParser.PlusContext ctx);
+	T visitBaseType(FOOLParser.BaseTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code arrowType}
+	 * labeled alternative in {@link FOOLParser#hotype}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrowType(FOOLParser.ArrowTypeContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code intType}
 	 * labeled alternative in {@link FOOLParser#type}.
@@ -135,4 +196,17 @@ public interface FOOLVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitBoolType(FOOLParser.BoolTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code idType}
+	 * labeled alternative in {@link FOOLParser#type}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitIdType(FOOLParser.IdTypeContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link FOOLParser#arrow}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrow(FOOLParser.ArrowContext ctx);
 }
