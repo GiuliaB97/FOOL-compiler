@@ -197,7 +197,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin(
 			visit(n.left),
 			visit(n.right),
-			"beq "+l1,	//Se sono uguali salto direttamente a l1 
+			"beq "+l1,	
 			"push 1",
 			l1+":",
 			"push 0",
