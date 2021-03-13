@@ -1,5 +1,5 @@
 push 0
-pushfunction0
+push function0
 lfp
 push 5
 push 3
@@ -14,12 +14,24 @@ js
 print
 halt
 
-function0:cfp
+function0:
+cfp
 lra
+lfp
+push 1
+add
+lw
+lfp
+push 2
+add
+lw
+add
 stm
+sra
 pop
 pop
 pop
-push
+sfp
 ltm
 lra
+js

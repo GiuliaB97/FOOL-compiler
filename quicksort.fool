@@ -24,7 +24,7 @@ let
   fun filter:List (l:List, pivot:int, before:bool) 
       let
         fun accept:bool (cond:bool)
-            if (before) then {cond} else {not(cond)};
+            if (before) then {cond} else {!(cond)};
       in        
         if (l == null) 
           then {null}
