@@ -4,7 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-import visualvsm.SVMParser;
+import svm.SVMParser;
 
 import java.util.List;
 import java.util.Vector;

@@ -122,7 +122,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"mult"
 		);	
 	}
-
+	
 	@Override
 	public String visitNode(PlusNode n) {
 		if (print) printNode(n);
@@ -132,7 +132,97 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"add"				
 		);
 	}
-
+////////////////////////////////////////////////////LANGUAGE EXTENSION NODES
+	@Override
+	public String visitNode(GreaterEqualNode n) {
+		if (print) printNode(n);
+	 	String l1 = freshLabel();
+	 	String l2 = freshLabel();
+		return nlJoin(
+			visit(n.right),
+			visit(n.left),
+			"bleq "+l1,
+			"push 0",
+			"b "+l2,
+			l1+":",
+			"push 1",
+			l2+":"
+		);
+	}@Override
+	public String visitNode(LessEqualNode n) {
+		if (print) printNode(n);
+	 	String l1 = freshLabel();
+	 	String l2 = freshLabel();
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"bleq "+l1,
+			"push 0",
+			"b "+l2,
+			l1+":",
+			"push 1",
+			l2+":"
+		);
+	}@Override
+	
+	public String visitNode(NotNode n) {
+		if (print) printNode(n);
+		return nlJoin(
+			visit(n.val), // complemento a 2 nego il numero moltiplicandolo per -1 e poi risommo 1 per ottenere il numero corretto
+			"push -1", 
+			"mult", 
+			"push 1",
+			"add"
+		);
+	}@Override
+	public String visitNode(MinusNode n) {
+		if (print) printNode(n);
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"minus"				
+		);
+	}
+	
+	@Override
+	public String visitNode(OrNode n) {//Dubito seriamente funzioni
+		if (print) printNode(n);
+	 	String l1 = freshLabel();
+	 	String l2 = freshLabel();
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"beq "+l1,	//Se sono uguali salto direttamente a l1 
+			"push 1"
+			l1+":",
+			"push 0",
+			"beq"+l2,
+			"push 1"
+			l2+":"
+		);
+	}
+	
+	@Override
+	public String visitNode(DivNode n) {
+		if (print) printNode(n);
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"div"				
+		);
+	}
+	
+	@Override
+	public String visitNode(AndNode n) {
+		if (print) printNode(n);
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"mult"				//0*0=0; 0*1=0, ecc. => considera l'aritmetica binaria		
+		);
+	}
+	
+	//////////////////////////////////////////////////////////////
 	@Override
 	public String visitNode(CallNode n) {
 		if (print) printNode(n,n.id);
