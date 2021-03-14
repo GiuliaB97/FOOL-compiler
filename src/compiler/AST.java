@@ -189,8 +189,8 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
-	//Estende DecNode
-	//Un campo cos'ha un tipo e un valore
+	
+	//da specifica come ParNode: field ha valore e un tipo
 	public static class FieldNode extends DecNode {
 		final String id;
 		int offset;
@@ -200,7 +200,7 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	
-	//un metodo ha un tipo, parametri, campi, altri metodi
+	//da specifica come funNode; un metodo ha un tipo, parametri, campi, altri metodi
 	public static class MethodNode extends Node {
 		final String id;
 		final List<Node> arglist;
@@ -233,11 +233,14 @@ public class AST {
 	}
 	//un tipo classe cos'ha? 1-0 campi e 1-0 metodi=>mi servono due liste per contenerli
 	public static class ClassTypeNode extends Node {
-		List<TypeNode> fields;
-		List<MethodTypeNode> methods;
-		ClassTypeNode(List<TypeNode> f, List<MethodTypeNode> m) {
+		List<TypeNode> fields;			//richiesto da specifica
+		List<MethodTypeNode> methods;	//richiesto da specifica
+		String superID;					//richiesto da specifica
+		STentry superEntry=null;		//mi serve qualcosa da dove andare a reperire i campi e metodi che eredito(?)
+		ClassTypeNode(List<TypeNode> f, List<MethodTypeNode> m, String i) {
 			fields = f;
 			methods = m;
+			superID = i;
 		}
 
 		@Override
