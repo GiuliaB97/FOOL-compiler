@@ -39,7 +39,7 @@ public class AST {
 	    	exp=e;
 	    }
 		
-		//void setType(TypeNode t) {type = t;}
+		//void setType(TypeNode t) {type = t;} //estensione per HO
 		
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
@@ -170,6 +170,126 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	///////////////////////////////////////////////////
+	//////////////////////////////////////OO EXTENSION
+	//Come varNode e compagnia bella ClassNode deve estendere DecNode
+	//che cos'ha una classe?0-n campi, metodie un qualche tipo di id (Esattamente come varnode ecc.)
+	//come FunNode ho bisogno di un metodo setType
+	//potrebbe mancare qualcosa??????????????????????????????????
+	public static class ClassNode extends DecNode {
+		final String id;
+		final List<FieldNode> fieldlist;
+		final List<MethodNode> methodlist;
+		STentry entry;
+		ClassNode(String i, List<FieldNode> f,  List<MethodNode> m ) {
+			id = i; 
+			fieldlist = Collections.unmodifiableList(f);
+			methodlist = Collections.unmodifiableList(m);
+		}
+		
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//Estende DecNode
+	//Un campo cos'ha un tipo e un valore
+	public static class FieldNode extends DecNode {
+		final String id;
+		int offset;
+		FieldNode(String i, TypeNode t) {id = i; type=t;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	//un metodo ha un tipo, parametri, campi, altri metodi
+	public static class MethodNode extends Node {
+		final String id;
+		final List<Node> arglist;
+		STentry entry;
+		int nl;
+		MethodNode(String i, List<Node> p) {
+			id = i; 
+			arglist = Collections.unmodifiableList(p);
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class ClassCallNode extends Node {
+		final String classId;
+		final String methodId;
+		final List<Node> arglist;
+		STentry classEntry;
+		STentry methodEntry;
+		int nl;
+		ClassCallNode(String c, String m, List<Node> p) {
+			classId = c; 
+			methodId = m;
+			arglist = Collections.unmodifiableList(p);
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//un tipo classe cos'ha? 1-0 campi e 1-0 metodi=>mi servono due liste per contenerli
+	public static class ClassTypeNode extends Node {
+		List<TypeNode> fields;
+		List<MethodTypeNode> methods;
+		ClassTypeNode(List<TypeNode> f, List<MethodTypeNode> m) {
+			fields = f;
+			methods = m;
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//simile a arrowNode
+	public static class NewNode extends TypeNode {
+		final String id;
+		final List<Node> arglist;
+		STentry entry;
+		int nl;
+		NewNode(String i, List<Node> p) {
+			arglist = Collections.unmodifiableList(p); 
+			id = i;
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	
+	public static class EmptyNode extends TypeNode {
+		
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//che cos'ha un metodo? 0-n parametri e un qualche tipo di ritorno(?)
+	//perchè? uso arrotype per l'inizializzazione corretta
+	//fun rapresenta la mia variabile di tipo arrowtype dove vado a salvare campi e  tipo
+	public static class MethodTypeNode extends Node {
+		final ArrowTypeNode fun;
+		MethodTypeNode(List<TypeNode> p, TypeNode r ) {
+			fun = new ArrowTypeNode(p, r);
+		}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//Come BoolNode e intNode
+	public static class RefTypeNode extends TypeNode {
+		final String id;
+		RefTypeNode(String i) {id = i;}
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//come boolType e intType
+	public static class EmptyTypeNode extends TypeNode {
+
+		@Override
+		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
+	}
+	//////////////////////////////////////////////////
 	public static class CallNode extends Node {
 		final String id;
 		final List<Node> arglist;

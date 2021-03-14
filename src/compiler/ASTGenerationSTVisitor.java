@@ -57,7 +57,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 ////////////////////////////////////////////////////LANGUAGE EXTENSION NODES
 	@Override
-	public Node visitTimesDiv(TimesDivContext c) {					//to finish
+	public Node visitTimesDiv(TimesDivContext c) {					
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.TIMES()!=null) {
@@ -71,7 +71,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	@Override
-	public Node visitPlusMinus(PlusMinusContext c) {				//to finish
+	public Node visitPlusMinus(PlusMinusContext c) {				
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.PLUS()!=null) {
@@ -85,7 +85,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	@Override
-	public Node visitComp(CompContext c) {							//to finish
+	public Node visitComp(CompContext c) {							
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.EQ()!=null) {
