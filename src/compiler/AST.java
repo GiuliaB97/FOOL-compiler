@@ -2,7 +2,7 @@ package compiler;
 
 import java.util.*;
 import compiler.lib.*;
-
+//AST ok; errors will fix when you finish your code.
 public class AST {
 	
 	public static class ProgLetInNode extends Node {
@@ -39,7 +39,7 @@ public class AST {
 	    	exp=e;
 	    }
 		
-		//void setType(TypeNode t) {type = t;} //estensione per HO
+		void setType(TypeNode t) {type = t;} //estensione per HO
 		
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
@@ -107,7 +107,6 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	//////////////////////////////////////////////////// LANGUAGE EXTENSION NODES
-	
 	public static class GreaterEqualNode extends Node {
 		final Node left;
 		final Node right;
@@ -171,21 +170,27 @@ public class AST {
 	}
 	///////////////////////////////////////////////////
 	//////////////////////////////////////OO EXTENSION
-	//Come varNode e compagnia bella ClassNode deve estendere DecNode
-	//che cos'ha una classe?0-n campi, metodie un qualche tipo di id (Esattamente come varnode ecc.)
-	//come FunNode ho bisogno di un metodo setType
-	//potrebbe mancare qualcosa??????????????????????????????????
+	/*Come varNode e compagnia bella ClassNode deve estendere DecNode
+	che cos'ha una classe?0-n campi, metodie un qualche tipo di id (Esattamente come varnode ecc.)
+	come FunNode ho bisogno di un metodo setType
+	potrebbe mancare qualcosa??????????????????????????????????
+	*/
 	public static class ClassNode extends DecNode {
 		final String id;
 		final List<FieldNode> fieldlist;
 		final List<MethodNode> methodlist;
-		STentry entry;
-		ClassNode(String i, List<FieldNode> f,  List<MethodNode> m ) {
+		String superID;					//richiesto da specifica
+		STentry superEntry=null;		//mi serve qualcosa da dove andare a reperire i campi e metodi che eredito(?)		
+		ClassNode(String i, List<FieldNode> f,  List<MethodNode> m, String si ) {
 			id = i; 
 			fieldlist = Collections.unmodifiableList(f);
 			methodlist = Collections.unmodifiableList(m);
+			superID = si;
 		}
 		
+		void setType(ClassTypeNode t) {type = t;}		//Da errore perchè devi finire
+		
+		void setSuperEntry(STentry e) {this.superEntry = e;}
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
@@ -201,16 +206,30 @@ public class AST {
 	}
 	
 	//da specifica come funNode; un metodo ha un tipo, parametri, campi, altri metodi
-	public static class MethodNode extends Node {
+	public static class MethodNode extends DecNode {
+		final Node exp;
 		final String id;
-		final List<Node> arglist;
-		STentry entry;
+		final TypeNode retType;
+		final List<ParNode> parlist;
+		final List<DecNode> declist; 
 		int nl;
-		MethodNode(String i, List<Node> p) {
+		int offset;
+		String label;
+		
+		MethodNode(String i, List<ParNode> p,  List<DecNode> dl, Node e, TypeNode nt) {
 			id = i; 
-			arglist = Collections.unmodifiableList(p);
+			parlist = Collections.unmodifiableList(p);
+			declist = Collections.unmodifiableList(dl); 
+			exp=e;
+			retType= nt;
+			List<ParNode> parTypelist;
+			for(ParNode par: parlist) {
+				parTypelist.add(par);
+			}
+			type = new MethodTypeNode(parTypelist, retType);
 		}
-
+		public void setType(TypeNode t) {type = t;}  // usato da SymbolTable durante la visita per settare il tipo "MethodTypeNode".
+		
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
@@ -222,6 +241,7 @@ public class AST {
 		STentry classEntry;
 		STentry methodEntry;
 		int nl;
+		
 		ClassCallNode(String c, String m, List<Node> p) {
 			classId = c; 
 			methodId = m;
@@ -232,15 +252,13 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	//un tipo classe cos'ha? 1-0 campi e 1-0 metodi=>mi servono due liste per contenerli
-	public static class ClassTypeNode extends Node {
+	public static class ClassTypeNode extends TypeNode {
 		List<TypeNode> fields;			//richiesto da specifica
 		List<MethodTypeNode> methods;	//richiesto da specifica
-		String superID;					//richiesto da specifica
-		STentry superEntry=null;		//mi serve qualcosa da dove andare a reperire i campi e metodi che eredito(?)
-		ClassTypeNode(List<TypeNode> f, List<MethodTypeNode> m, String i) {
+		
+		ClassTypeNode(List<TypeNode> f, List<MethodTypeNode> m) {
 			fields = f;
 			methods = m;
-			superID = i;
 		}
 
 		@Override
@@ -269,7 +287,7 @@ public class AST {
 	//che cos'ha un metodo? 0-n parametri e un qualche tipo di ritorno(?)
 	//perchè? uso arrotype per l'inizializzazione corretta
 	//fun rapresenta la mia variabile di tipo arrowtype dove vado a salvare campi e  tipo
-	public static class MethodTypeNode extends Node {
+	public static class MethodTypeNode extends TypeNode {
 		final ArrowTypeNode fun;
 		MethodTypeNode(List<TypeNode> p, TypeNode r ) {
 			fun = new ArrowTypeNode(p, r);
@@ -292,6 +310,8 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
+	
+	
 	//////////////////////////////////////////////////
 	public static class CallNode extends Node {
 		final String id;
