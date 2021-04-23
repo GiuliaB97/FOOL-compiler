@@ -12,24 +12,51 @@ import compiler.lib.*;
 *		riferimento(RefTypeNode),
 *	-da aggiornare quando si visita ClassNode 
 *		tramite campo superID
-*	isSubtype() in TypeRels estesa considerando:
-*	– un tipo riferimento RefTypeNode sottotipo di un
-*	altro in base alla funzione superType
-*	• raggiungibilità applicandola multiple volte
-*		– un tipo EmptyTypeNode sottotipo di un qualsiasi
-*			tipo riferimento RefTypeNode
-*		– un tipo funzionale ArrowTypeNode sottotipo di un
-*			altro (come per estensione Higher Order, ma qui
-*			necessario per overriding tra metodi) in base alla:
-*	• relazione di co-varianza sul tipo di ritorno
-*	• relazione di contro-varianza sul tipo dei parametri
+*	
 */
 // valuta se il tipo "a" e' <= al tipo "b", dove "a" e "b" sono tipi di base: IntTypeNode o BoolTypeNode
 
 public class TypeRels {
+	//CAMBIATA TUTTA
+	static Map<String,String> superType;//mappa l'ID di classe nell'ID della sua superclasse; ossia è una struttura gerarchica che definisce la gerarchia dei tipi di riferimento (RefTypeNode), da aggiornare quando si visita classNode tramite campo super ID
 	
-	static Map<String,String> superType;
+	private static boolean isSuperType(String a, String b) {
+		return superType.get(a).equals(b) || (superType.containsKey(superType.get(a)) ? isSuperType(superType.get(a), b) : false);
+	}
 	
+	// Versione base: valuta se il tipo "a" e' <= al tipo "b", dove "a" e "b" sono tipi di base: IntTypeNode o BoolTypeNode
+	/*isSubtype() in TypeRels estesa considerando:
+	* – un tipo riferimento RefTypeNode sottotipo di un altro in base alla funzione superType
+	*	• raggiungibilità applicandola multiple volte
+	*		– un tipo EmptyTypeNode sottotipo di un qualsiasi tipo riferimento RefTypeNode
+	*		– un tipo funzionale ArrowTypeNode sottotipo di un altro (come per estensione HO, ma qui necessario per overriding tra metodi) in base alla:
+	*			- relazione di co-varianza sul tipo di ritorno
+	*			- relazione di contro-varianza sul tipo dei parametri
+	*/
+		public static boolean isSubtype(TypeNode a, TypeNode b) {
+			if(a instanceof EmptyTypeNode && b instanceof RefTypeNode) {// un tipo EmptyTypeNode sottotipo di un qualsiasi tipo riferimento RefTypeNode
+				return true;
+			}
+			if(a instanceof RefTypeNode) {
+				if(b instanceof RefTypeNode) {
+				RefTypeNode a1 = (RefTypeNode)a;
+				RefTypeNode b1 = (RefTypeNode)b;
+				return a1.id.equals(b1.id) || superType.containsKey(a1.id) && isSuperType(a1.id, b1.id);
+				} else {
+					return false;
+				}
+			} 			
+			if(a instanceof EmptyTypeNode && b instanceof RefTypeNode || b instanceof EmptyTypeNode) {
+				return true;
+			}
+			if(a instanceof ArrowTypeNode && b instanceof ArrowTypeNode) {
+				ArrowTypeNode a1 = (ArrowTypeNode)a;
+				ArrowTypeNode b1 = (ArrowTypeNode)b;
+				return a1.parlist.size() == b1.parlist.size() && isSubtype(a1.ret, b1.ret) && checkParameters(b1.parlist, a1.parlist);
+			}
+			return a.getClass().equals(b.getClass()) || ((a instanceof BoolTypeNode) && (b instanceof IntTypeNode));
+			
+		}
 	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
 		if(a instanceof RefTypeNode || a instanceof EmptyTypeNode && b instanceof RefTypeNode || b instanceof EmptyTypeNode) {
 			if (a instanceof EmptyTypeNode) {
@@ -58,31 +85,7 @@ public class TypeRels {
 		return null;
 	}
 
-	// valuta se il tipo "a" e' <= al tipo "b", dove "a" e "b" sono tipi di base: IntTypeNode o BoolTypeNode
-	public static boolean isSubtype(TypeNode a, TypeNode b) {
-		if(a instanceof EmptyTypeNode && b instanceof RefTypeNode) {
-			return true;
-		}
-		if(a instanceof RefTypeNode) {
-			if(b instanceof RefTypeNode) {
-			RefTypeNode a1 = (RefTypeNode)a;
-			RefTypeNode b1 = (RefTypeNode)b;
-			return a1.id.equals(b1.id) || superType.containsKey(a1.id) && isSuperType(a1.id, b1.id);
-			} else {
-				return false;
-			}
-		} 			
-		if(a instanceof EmptyTypeNode && b instanceof RefTypeNode || b instanceof EmptyTypeNode) {
-			return true;
-		}
-		if(a instanceof ArrowTypeNode && b instanceof ArrowTypeNode) {
-			ArrowTypeNode a1 = (ArrowTypeNode)a;
-			ArrowTypeNode b1 = (ArrowTypeNode)b;
-			return a1.parlist.size() == b1.parlist.size() && isSubtype(a1.ret, b1.ret) && checkParameters(b1.parlist, a1.parlist);
-		}
-		return a.getClass().equals(b.getClass()) || ((a instanceof BoolTypeNode) && (b instanceof IntTypeNode));
-		
-	}
+	
 	
 	private static boolean checkParameters(List<TypeNode> a, List<TypeNode> b) {
 		boolean eq = true;
@@ -104,8 +107,6 @@ public class TypeRels {
 		}
 	}
 	
-	private static boolean isSuperType(String a, String b) {
-		return superType.get(a).equals(b) || (superType.containsKey(superType.get(a)) ? isSuperType(superType.get(a), b) : false);
-	}
+	
 
 }

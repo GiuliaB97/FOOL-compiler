@@ -8,6 +8,7 @@ public int lexicalErrors=0;
  * PARSER RULES
  *------------------------------------------------------------------*/
   
+  
 prog : progbody EOF ;
      
 progbody : LET ( cldec+ dec* | dec+ ) IN exp SEMIC #letInProg
@@ -49,6 +50,7 @@ exp     : exp (TIMES | DIV) exp #timesDiv
 	    | ID LPAR (exp (COMMA exp)* )? RPAR #call
 	    | ID DOT ID LPAR (exp (COMMA exp)* )? RPAR #dotCall              
         ; 
+        /* ID (DOT ID LPAR (exp (COMMA exp)* )? RPAR)+ #dotCall     */ 
  
                
 hotype  : type #baseType
@@ -107,10 +109,8 @@ NUM     : '0' | ('1'..'9')('0'..'9')* ;
 ID  	: ('a'..'z'|'A'..'Z')('a'..'z' | 'A'..'Z' | '0'..'9')* ;
 
 
-
 WHITESP  : ( '\t' | ' ' | '\r' | '\n' )+    -> channel(HIDDEN) ;
 
 COMMENT : '/*' .*? '*/' -> channel(HIDDEN) ;
  
 ERR   	 : . { System.out.println("Invalid char: "+ getText() +" at line "+getLine()); lexicalErrors++; } -> channel(HIDDEN); 
-

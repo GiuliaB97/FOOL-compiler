@@ -6,6 +6,8 @@ import compiler.lib.*;
 import static compiler.TypeRels.*;
 import static compiler.TypeRels.lowestCommonAncestor;
 
+import java.util.HashMap;
+
 /*Ottimizzazioni OO
  * Type Checking Più Efficiente per ClassNode
  * • Migliora l’efficienza nel type checking della dichiarazione delle classi
@@ -81,7 +83,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	@Override
 	public TypeNode visitNode(ProgLetInNode n) throws TypeException {
 		if (print) printNode(n);
- 
+		TypeRels.superType = new HashMap<>();
 		for (Node dec : n.declist)
 			try {
 				visit(dec);
@@ -204,7 +206,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Cannot compare functional types ", n.getLine());
 		if ( !(isSubtype(visit(n.left), visit(n.right)) || isSubtype(visit(n.right), visit(n.left))) )
 			throw new TypeException("Incompatible types in equal",n.getLine());
-		return new IntTypeNode();
+		return new  BoolTypeNode();//ritorna un boolean scema
 	}
 	
 	@Override
@@ -215,7 +217,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Cannot compare functional types ", n.getLine());
 		if ( !(isSubtype(visit(n.left), visit(n.right)) || isSubtype(visit(n.right), visit(n.left))) )
 			throw new TypeException("Incompatible types in equal",n.getLine());
-		return new IntTypeNode();
+		return new  BoolTypeNode();//ritorna un boolean scema
 	}
 	
 	@Override
@@ -244,7 +246,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		return new BoolTypeNode();
 	}
 //////////////////////////////////////////////////////////////////////////
-	public TypeNode visitNode(MethodNode n) throws TypeException {
+	public TypeNode visitNode(MethodNode n) throws TypeException {						//uguale a FunNode		
 		if (print) printNode(n,n.id);
 		for (Node dec : n.declist)
 			try {
@@ -257,20 +259,22 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Wrong return type for method " + n.id,n.getLine());
 		return null;
 	}
+	
 	@Override
-	public TypeNode visitNode(ClassCallNode n) throws TypeException {
-		if (print) printNode(n,n.classId);
+	public TypeNode visitNode(ClassCallNode n) throws TypeException {					//uguale a call node il symboltable visitor ha già controllato che id sia di tipo RefTypeNode
+		if (print) printNode(n,n.classID);
 		TypeNode t = visit(n.methodEntry); 
 		if ( !(t instanceof MethodTypeNode) )
-			throw new TypeException("Invocation of a non-method "+n.methodId,n.getLine());
+			throw new TypeException("Invocation of a non-method "+n.methodID,n.getLine());
 		ArrowTypeNode at = ((MethodTypeNode) t).fun;
 		if ( !(at.parlist.size() == n.arglist.size()) )
-			throw new TypeException("Wrong number of parameters in the invocation of "+n.methodId,n.getLine());
+			throw new TypeException("Wrong number of parameters in the invocation of "+n.methodID,n.getLine());
 		for (int i = 0; i < n.arglist.size(); i++)
 			if ( !(isSubtype(visit(n.arglist.get(i)),at.parlist.get(i))) )
-				throw new TypeException("Wrong type for "+(i+1)+"-th parameter in the invocation of "+n.methodId,n.getLine());
+				throw new TypeException("Wrong type for "+(i+1)+"-th parameter in the invocation of "+n.methodID,n.getLine());
 		return at.ret;
 	}
+	//torna semplicemente EmptyTypeNode
 	@Override
 	public TypeNode visitNode(EmptyNode n) {
 		if (print) printNode(n);
@@ -282,22 +286,22 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if(n.superID != null) {
 			TypeRels.superType.put(n.id, n.superID);
 			ClassTypeNode parentCT = (ClassTypeNode)n.superEntry.type;
-			for(int i = 0; i<n.fieldlist.size(); i++) {
-				int position = -n.fieldlist.get(i).offset-1;
-				if(position < parentCT.fields.size()) {
-					if(!isSubtype(n.fieldlist.get(i).getType(), parentCT.fields.get(position))) {
+			for(int i = 0; i<n.fields.size(); i++) {								//scorre tipi in array allFields/allMethods del genitore controlla che il tipo alla stessa posizione nel proprio array sia sottotipo
+				int position = -n.fields.get(i).offset-1;
+				if(position < parentCT.allFields.size()) {
+					if(!isSubtype(n.fields.get(i).getType(), parentCT.allFields.get(position))) {
 						throw new TypeException("Fields must be subtype of the ones declared in superclass",n.getLine());
 					}
 				}
 			}
-			for(int i = 0; i<n.methodlist.size(); i++) {
-				int position = n.methodlist.get(i).offset;
-				if(position < parentCT.methods.size()) {
+			for(int i = 0; i<n.methods.size(); i++) {			//classnode si richiama sui figli che sono metodi
+				int position = n.methods.get(i).offset;
+				if(position < parentCT.allMethods.size()) {
 						throw new TypeException("Methods must be subtype of the ones declared in superclass",n.getLine());
 				}
 			}
 		}
-		for (MethodNode m : n.methodlist) {
+		for (MethodNode m : n.methods) {
 			try {
 				visit(m);
 			} catch (IncomplException e) { 
@@ -329,27 +333,28 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	public TypeNode visitNode(NewNode n) throws TypeException {			// simile a CallNode - gli argomenti sono i campi della classe
 		if (print) printNode(n,n.id);
 		
-		TypeNode t = visit(n.entry); 
-		if ( !(t instanceof ClassTypeNode) )
+		TypeNode typeNode = visit(n.entry); 
+		if ( !(typeNode instanceof ClassTypeNode) )
 			throw new TypeException("Instancing of a non-class "+n.id,n.getLine());
 		
-		ClassTypeNode ct = (ClassTypeNode) t;
-		if ( !(ct.fields.size() == n.arglist.size()) )
+		ClassTypeNode classTypeNode = (ClassTypeNode) typeNode; //una volta che sono sicura che sia un classTypeNode devo creare la variabile giusta se no non posso accedere a allFields e allMethods
+		if ( !(classTypeNode.allFields.size() == n.arglist.size()) )
 			throw new TypeException("Wrong number of parameters to instance an object of class "+n.id,n.getLine());
 		
 		for (int i = 0; i < n.arglist.size(); i++)
-			if ( !(isSubtype(visit(n.arglist.get(i)),ct.fields.get(i))) )
+			if ( !(isSubtype(visit(n.arglist.get(i)),classTypeNode.allFields.get(i))) )//controllo i parametri come callnode
 				throw new TypeException("Wrong type for "+(i+1)+"-th parameter to instance an object of class "+n.id,n.getLine());
 		
-		return new RefTypeNode(n.id);
+		return new RefTypeNode(n.id);			//devo tornare un refTypeNode
 	}
+
 	@Override
 	public TypeNode visitNode(IdNode n) throws TypeException {
 		if (print) printNode(n,n.id);
-		if(n.entry.type instanceof MethodTypeNode)
+		if(n.entry.type instanceof MethodTypeNode)		// ID può essere di tipo funzionale ma non deve essere un metodo ; (non deve avere tipo "MethodTypeNode"in STentry);
 			throw new TypeException("Wrong usage of method " + n.id,n.getLine());
 		TypeNode t = visit(n.entry); 
-		if (t instanceof ClassTypeNode)
+		if (t instanceof ClassTypeNode)					//né deve essere il nome di una classe
 			throw new TypeException("Wrong usage of class identifier " + n.id,n.getLine());
 		return t;
 	}
@@ -358,6 +363,12 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	public TypeNode visitNode(BoolNode n) {
 		if (print) printNode(n,n.val.toString());
 		return new BoolTypeNode();
+	}
+	
+	@Override
+	public TypeNode visitNode(RefTypeNode n) {
+		if (print) printNode(n);
+		return n;
 	}
 
 	@Override
@@ -387,7 +398,19 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		if (print) printNode(n);
 		return null;
 	}
-
+	@Override
+	public TypeNode visitNode(ClassTypeNode n) throws TypeException {
+		if (print) printNode(n);
+		for(Node f:n.allFields) visit(f);
+		for(Node m:n.allMethods) visit(m);
+		return null;
+	}
+	@Override
+	public TypeNode visitNode(MethodTypeNode n) throws TypeException {
+		if (print) printNode(n);
+		visit(n.fun);
+		return null;
+	}
 // STentry (ritorna campo type)
 
 	@Override

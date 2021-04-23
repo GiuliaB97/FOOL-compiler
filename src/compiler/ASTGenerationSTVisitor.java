@@ -14,27 +14,27 @@ import static compiler.lib.FOOLlib.*;
 public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 	String indent;
-    public boolean print;
-	
-    ASTGenerationSTVisitor() {}    
-    ASTGenerationSTVisitor(boolean debug) { print=debug; }
-        
-    private void printVarAndProdName(ParserRuleContext ctx) {
-        String prefix="";        
-    	Class<?> ctxClass=ctx.getClass(), parentClass=ctxClass.getSuperclass();
-        if (!parentClass.equals(ParserRuleContext.class)) // parentClass is the var context (and not ctxClass itself)
-        	prefix=lowerizeFirstChar(extractCtxName(parentClass.getName()))+": production #";
-    	System.out.println(indent+prefix+lowerizeFirstChar(extractCtxName(ctxClass.getName())));                               	
-    }
-        
-    @Override
+	public boolean print;
+
+	ASTGenerationSTVisitor() {}    
+	ASTGenerationSTVisitor(boolean debug) { print=debug; }
+	//NON MODIFICATI  
+	private void printVarAndProdName(ParserRuleContext ctx) {
+		String prefix="";        
+		Class<?> ctxClass=ctx.getClass(), parentClass=ctxClass.getSuperclass();
+		if (!parentClass.equals(ParserRuleContext.class)) // parentClass is the var context (and not ctxClass itself)
+			prefix=lowerizeFirstChar(extractCtxName(parentClass.getName()))+": production #";
+		System.out.println(indent+prefix+lowerizeFirstChar(extractCtxName(ctxClass.getName())));                               	
+	}
+
+	@Override
 	public Node visit(ParseTree t) {
-    	if (t==null) return null;
-        String temp=indent;
-        indent=(indent==null)?"":indent+"  ";
-        Node result = super.visit(t);
-        indent=temp;
-        return result; 
+		if (t==null) return null;
+		String temp=indent;
+		indent=(indent==null)?"":indent+"  ";
+		Node result = super.visit(t);
+		indent=temp;
+		return result; 
 	}
 
 	@Override
@@ -44,122 +44,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	@Override
-	public Node visitLetInProg(LetInProgContext c) {
-		if (print) printVarAndProdName(c);
-		List<DecNode> declist = new ArrayList<>();
-		for (CldecContext cldec : c.cldec()) {
-			declist.add((DecNode) visit(cldec));
-		}
-		for (DecContext dec : c.dec()) {
-			declist.add((DecNode) visit(dec));
-		}
-		return new ProgLetInNode(declist, visit(c.exp()));
-	}
-
-	@Override
 	public Node visitNoDecProg(NoDecProgContext c) {
 		if (print) printVarAndProdName(c);
 		return new ProgNode(visit(c.exp()));
-	}
-
-	@Override
-	public Node visitTimesDiv(TimesDivContext c) {
-		if (print) printVarAndProdName(c);
-		Node n = null;
-		if(c.TIMES() != null) {
-			n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.TIMES().getSymbol().getLine());
-		} else if(c.DIV() != null){
-			n = new DivNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.DIV().getSymbol().getLine());
-		}// setLine added
-        return n;		
-	}
-
-	@Override
-	public Node visitPlusMinus(PlusMinusContext c) {
-		if (print) printVarAndProdName(c);
-		Node n = null;
-		if(c.PLUS() != null) {
-			n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.PLUS().getSymbol().getLine());
-		} else if(c.MINUS() != null){
-			n = new MinusNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.MINUS().getSymbol().getLine());
-		}
-        return n;		
-	}
-	
-	@Override
-	public Node visitAndOr(AndOrContext c) {
-		if (print) printVarAndProdName(c);
-		Node n = null;
-		if(c.AND() != null) {
-			n = new AndNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.AND().getSymbol().getLine());
-		} else if(c.OR() != null){
-			n = new OrNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.OR().getSymbol().getLine());
-		}
-        return n;		
-	}
-	
-	@Override
-	public Node visitNot(NotContext c) {
-		if (print) printVarAndProdName(c);
-		Node n = new NotNode(visit(c.exp()));
-		n.setLine(c.NOT().getSymbol().getLine());	
-        return n;		
-	}
-
-	@Override
-	public Node visitComp(CompContext c) {
-		if (print) printVarAndProdName(c);	
-		Node n = null;
-		if(c.EQ() != null) {
-			n = new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.EQ().getSymbol().getLine());
-		} else if(c.GE() != null) {
-			n = new GreaterEqualNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.GE().getSymbol().getLine());
-			
-		} else if(c.LE() != null) {
-			n = new LessEqualNode(visit(c.exp(0)), visit(c.exp(1)));
-			n.setLine(c.LE().getSymbol().getLine());
-		}
-        return n;		
-	}
-
-	@Override
-	public Node visitVardec(VardecContext c) {
-		if (print) printVarAndProdName(c);
-		Node n = null;
-		if (c.ID()!=null) { //non-incomplete ST
-			n = new VarNode(c.ID().getText(), (TypeNode) visit(c.hotype()), visit(c.exp()));
-			n.setLine(c.VAR().getSymbol().getLine());
-		}
-        return n;
-	}
-	
-	@Override
-	public Node visitFundec(FundecContext c) {
-		if (print) printVarAndProdName(c);
-		List<ParNode> parList = new ArrayList<>();
-		List<TypeNode> typeList = new ArrayList<>();
-		for (int i = 1; i < c.ID().size(); i++) { 
-			ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));
-			p.setLine(c.ID(i).getSymbol().getLine());
-			parList.add(p);
-			typeList.add(p.getType());
-		}
-		List<DecNode> decList = new ArrayList<>();
-		for (DecContext dec : c.dec()) decList.add((DecNode) visit(dec));
-		Node n = null;
-		if (c.ID().size()>0) { //non-incomplete ST
-			n = new FunNode(c.ID(0).getText(),(TypeNode)visit(c.type()),parList,decList,visit(c.exp()));
-			n.setLine(c.FUN().getSymbol().getLine());
-		}
-        return n;
 	}
 
 	@Override
@@ -174,13 +61,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		return new BoolTypeNode();
 	}
 
-	@Override
-	public Node visitArrowType(ArrowTypeContext c) {
-		if (print) printVarAndProdName(c);
-		return new ArrowTypeNode(c.arrow().hotype().stream().map(par -> (TypeNode)visit(par)).collect(Collectors.toList()), 
-				(TypeNode)visit(c.arrow().type()) );
-	}
-	
 	@Override
 	public Node visitInteger(IntegerContext c) {
 		if (print) printVarAndProdName(c);
@@ -208,7 +88,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		Node elseNode = visit(c.exp(2));
 		Node n = new IfNode(ifNode, thenNode, elseNode);
 		n.setLine(c.IF().getSymbol().getLine());			
-        return n;		
+		return n;		
 	}
 
 	@Override
@@ -240,36 +120,156 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.ID().getSymbol().getLine());
 		return n;
 	}
-	
+	/////////////////////////////////////////////////////////
 	@Override
-	public Node visitCldec(CldecContext c) {
+	public Node visitLetInProg(LetInProgContext c) {
 		if (print) printVarAndProdName(c);
-		String ext = c.EXTENDS() != null ?  c.ID(1).getText() : null;
-		List<FieldNode> arglist = new ArrayList<>();
-		List<MethodNode> methlist = new ArrayList<>();
+		List<DecNode> declist = new ArrayList<>();
+		for (CldecContext cldec : c.cldec()) declist.add((DecNode) visit(cldec));//Estensione OO: se ci sono classi vengono dichiarate prima delle altre dichiarazioni
+		for (DecContext dec : c.dec()) declist.add((DecNode) visit(dec));
+		return new ProgLetInNode(declist, visit(c.exp()));
+	}
+
+	/////////////////////////////LANUGUAGE EXTENSION
+	//MERGE TIMES & DIV
+	@Override
+	public Node visitTimesDiv(TimesDivContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = null;
+		if(c.TIMES() != null) {
+			n = new TimesNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.TIMES().getSymbol().getLine());
+		} else if(c.DIV() != null){
+			n = new DivNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.DIV().getSymbol().getLine());
+		}
+		return n;		
+	}
+	//MERGE PLUS & MINUS
+	@Override
+	public Node visitPlusMinus(PlusMinusContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = null;
+		if(c.PLUS() != null) {
+			n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.PLUS().getSymbol().getLine());
+		} else if(c.MINUS() != null){
+			n = new MinusNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.MINUS().getSymbol().getLine());
+		}
+		return n;		
+	}
+	//&& & !! sono nuovi ma li tratto uguali a *, /, -, +
+	@Override
+	public Node visitAndOr(AndOrContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = null;
+		if(c.AND() != null) {
+			n = new AndNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.AND().getSymbol().getLine());
+		} else if(c.OR() != null){
+			n = new OrNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.OR().getSymbol().getLine());
+		}
+		return n;		
+	}
+	// ! unica expr da visitare
+	@Override
+	public Node visitNot(NotContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = new NotNode(visit(c.exp()));
+		n.setLine(c.NOT().getSymbol().getLine());	
+		return n;		
+	}
+	//MERGE visito <=, >=, ==
+	@Override
+	public Node visitComp(CompContext c) {
+		if (print) printVarAndProdName(c);	
+		Node n = null;
+		if(c.EQ() != null) {
+			n = new EqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.EQ().getSymbol().getLine());
+		} else if(c.GE() != null) {
+			n = new GreaterEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.GE().getSymbol().getLine());
+
+		} else if(c.LE() != null) {
+			n = new LessEqualNode(visit(c.exp(0)), visit(c.exp(1)));
+			n.setLine(c.LE().getSymbol().getLine());
+		}
+		return n;		
+	}
+	/////////////////////////////////////////////////////
+	// cambia il primo parametro passato alla visit da type() a hotype()
+	@Override
+	public Node visitVardec(VardecContext c) {
+		if (print) printVarAndProdName(c);
+		Node n = null;
+		if (c.ID()!=null) { //non-incomplete ST
+			n = new VarNode(c.ID().getText(), (TypeNode) visit(c.hotype()), visit(c.exp()));//Estensione HO: type cambiato in hoType()
+			n.setLine(c.VAR().getSymbol().getLine());
+		}
+		return n;
+	}
+
+	@Override
+	public Node visitFundec(FundecContext c) {
+		if (print) printVarAndProdName(c);
+		List<ParNode> parList = new ArrayList<>();
+		for (int i = 1; i < c.ID().size(); i++) { 
+			ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));// Estensione HO: ultima visita era su type (i) ed ora hotype(i-1)
+			p.setLine(c.ID(i).getSymbol().getLine());
+			parList.add(p);
+		}
+		List<DecNode> decList = new ArrayList<>();
+		for (DecContext dec : c.dec()) decList.add((DecNode) visit(dec));
+		Node n = null;
+		if (c.ID().size()>0) { //non-incomplete ST
+			n = new FunNode(c.ID(0).getText(),(TypeNode)visit(c.type()),parList,decList,visit(c.exp()));
+			n.setLine(c.FUN().getSymbol().getLine());
+		}
+		return n;
+	}
+
+	@Override
+	public Node visitCldec(CldecContext c) {//dichiarazione della classe
+		if (print) printVarAndProdName(c);
+		List<FieldNode> fields = new ArrayList<>();
+		List<MethodNode> methods = new ArrayList<>();
+		String supertype = null;	
+		int offset=1;				//nel nostro layout i campi della classe nell'heap partono da offset-1 e arrivano a offset -n,
+
+		if(c.EXTENDS() != null) {// se la classe estende, gli ID dei fields partono dall'indice 2 anzichè dall'indice 1
+			supertype=null;
+			offset=2;
+		}
+		
 		//visito il campo c.type per vedere tutti i campi
 		for(int i=0; i < c.type().size(); i++) {
-			TypeNode type = (TypeNode)visit(c.type(i));
-			FieldNode f = new FieldNode(c.ID(ext == null ? i+1 : i+2).getText(), type);
+			FieldNode f = new FieldNode(c.ID(i+offset).getText(), (TypeNode)visit(c.type(i)));	//mentre per l'id dei campi devo fare il controllo se la classe estende o meno per trovare l'indice giusto,i type dei fields partono sempre dall'indice 0		
+			if(supertype!=null) {
+				System.out.println("///////////////////////////////////////////posizione 1"+(c.ID(i).getText()));
+			}
 			f.setLine(c.ID(i).getSymbol().getLine());
-			arglist.add(f);
+			fields.add(f);
 		}
 		//visito il campo c.methdec per vedere tutte le dichiarazioni di metodi
 		for(int i=0; i < c.methdec().size(); i++) {
 			MethodNode m = (MethodNode)visit(c.methdec(i));
-			methlist.add(m);
+			methods.add(m);
 		}
-		Node n = new ClassNode(c.ID(0).getText(), arglist, methlist, ext);
+		Node n = new ClassNode(c.ID(0).getText(), fields, methods, supertype);
 		n.setLine(c.CLASS().getSymbol().getLine());
 		return n;
 	}
-	
+
 	@Override
-	public Node visitMethdec(MethdecContext c) {
+	public Node visitMethdec(MethdecContext c) {//==funnode
 		if (print) printVarAndProdName(c);
 		List<ParNode> parList = new ArrayList<>();
 		for (int i = 1; i < c.ID().size(); i++) { 
-			ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));
+			ParNode p = new ParNode(c.ID(i).getText(),
+					(TypeNode) visit(c.hotype(i-1)));
 			p.setLine(c.ID(i).getSymbol().getLine());
 			parList.add(p);
 		}
@@ -282,17 +282,18 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		return n;
 	}
-	
+
 	@Override
-	public Node visitDotCall(DotCallContext c) {
+	public Node visitDotCall(DotCallContext c) {// chiamata a metodo: ID1.ID2(par1,pars2) - Simile a call
 		if (print) printVarAndProdName(c);
 		List<Node> argList = new ArrayList<>();
 		for (ExpContext arg : c.exp()) argList.add(visit(arg));
-		Node n = new ClassCallNode(c.ID(0).getText(), c.ID(1).getText(), argList);
-		n.setLine(c.ID(0).getSymbol().getLine());
-        return n;
+		Node n = new ClassCallNode(c.ID(0).getText(), //classID-->refTypeNode con all'interno la classe a cui si riferisce
+				c.ID(1).getText(), argList);		//arglist
+		n.setLine(c.ID(0).getSymbol().getLine());	
+		return n;
 	}
-	
+
 	@Override
 	public Node visitNew(NewContext c) {
 		if (print) printVarAndProdName(c);
@@ -302,16 +303,37 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.ID().getSymbol().getLine());
 		return n;
 	}
-	
+
 	@Override
 	public Node visitNull(NullContext c) {
 		if (print) printVarAndProdName(c);
-		return new EmptyNode();
+		Node n = new EmptyNode();
+		return n;
 	}
-	
+
 	@Override
 	public Node visitIdType(IdTypeContext c) {
 		if (print) printVarAndProdName(c);
-		return new RefTypeNode(c.ID().getText());
+		RefTypeNode n = new RefTypeNode(c.ID().getText());
+		return n;
+	}
+
+	/*@Override
+	public Node visitArrowType(ArrowTypeContext c) {
+		if (print) printVarAndProdName(c);
+		return new ArrowTypeNode(c.arrow().hotype().stream().map(par -> (TypeNode)visit(par)).collect(Collectors.toList()), 
+				(TypeNode)visit(c.arrow().type()) );
+	}*/
+	@Override
+	public Node visitArrow(ArrowContext c) { // hotype di tipo arrow esempio: (hotype,hotype)->type 
+		if (print) printVarAndProdName(c);
+
+		List<TypeNode> parTypeList = new ArrayList<>();	 // carico i parametri che sono hotype (quindi ricorsivamente potrebbero anche essere di tipo arrow)
+		for (int i = 0; i < c.hotype().size(); i++)  	 // attenzione: non sono parNode come su funzione ma typeNode perchè è un TIPO: la sintassi è x:(int,int)->int
+			parTypeList.add((TypeNode) visit(c.hotype(i)));
+
+		Node n = new ArrowTypeNode(parTypeList, (TypeNode)visit(c.type()));  // il ritorno è sempre type
+		n.setLine(c.ARROW().getSymbol().getLine());
+		return n;
 	}
 }
