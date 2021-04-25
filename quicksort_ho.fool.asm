@@ -659,6 +659,7 @@ js
 function7:
 cfp
 lra
+push 1
 lfp
 lfp
 lw
@@ -681,10 +682,7 @@ push 1
 sub
 lw
 js
-push -1
-mult
-push 1
-add
+sub
 stm
 sra
 pop

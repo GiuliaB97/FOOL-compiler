@@ -346,7 +346,7 @@ public class AST {
 	}
 	
 	public static class MethodTypeNode extends TypeNode {
-		final ArrowTypeNode fun;
+		final ArrowTypeNode fun;								//richaimato dal TypeCheckVisitor; al momento della visita
 		MethodTypeNode(List<TypeNode> parTypelist, TypeNode r ) {
 			fun = new ArrowTypeNode(parTypelist, r);
 		}
@@ -356,6 +356,10 @@ public class AST {
 	}
 	
 	//TIPI
+	/*
+ * A type that represents a reference to a class (i.e., type of variable is a class)
+ * 
+ */
 	public static class RefTypeNode extends TypeNode { // var a:ClasseA;  ====> VarNode("a"):RefTypeNode("ClasseA");
 		final String id;				//da specifica ha solo l'id nella classe come campo
 		RefTypeNode(String i) {id = i;}
