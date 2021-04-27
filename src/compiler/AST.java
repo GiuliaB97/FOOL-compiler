@@ -35,8 +35,6 @@ public class AST {
 
 	/**
 	 * Class that  represents a print instruction (print the top value on the stack to stdout)
-	 * 
-	 *
 	 */
 	public static class PrintNode extends Node {
 		final Node exp;
@@ -74,7 +72,8 @@ public class AST {
 	
 	//////////////////////////////////////////////////// EXPRESSIONS
 	/**
-	 * 'x * y' expression; x and y are constrained to be integers
+	 * Class that represents a 'x * y' expression; 
+	 * x and y are constrained to be integers
 	 *
 	 */
 	public static class TimesNode extends Node {
@@ -87,7 +86,8 @@ public class AST {
 	}
 	
 	/**
-	 * 'x + y' expression; x and y are constrained to be integers
+	 * Class that represents a 'x + y' expression; 
+	 * x and y are constrained to be integers
 	 *
 	 */
 	public static class PlusNode extends Node {
@@ -100,7 +100,8 @@ public class AST {
 	}
 	
 	/**
-	 * 'x - y' expression; x and y are constrained to be integers
+	 * Class that represents a 'x - y' expression; 
+	 * x and y are constrained to be integers
 	 * 
 	 * @author giuliabrugnatti
 	 *
@@ -115,7 +116,8 @@ public class AST {
 	}
 	
 	/**
-	 * 'x / y' expression; x and y are constrained to be integers
+	 * Class that represents a 'x / y' expression; 
+	 * x and y are constrained to be integers
 	 * 
 	 * @author giuliabrugnatti
 	 *
@@ -130,7 +132,9 @@ public class AST {
 	}
 	
 	/**
-	 * 'x >= y' expression. x and y are constrained to be integers
+	 * Class that represents a 'x >= y' expression. 
+	 * x and y are constrained to be integers
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -144,11 +148,13 @@ public class AST {
 	}
 	
 	/**
-	 * 'x <= y' expression. x and y are constrained to be integers
+	 * Class that represents a 'x <= y' expression. 
+	 * x and y are constrained to be integers
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
-	public static class LessEqualNode extends Node {// LE
+	public static class LessEqualNode extends Node {	// LE
 		final Node left;
 		final Node right;
 		LessEqualNode(Node l, Node r) {left = l; right = r;}
@@ -158,7 +164,9 @@ public class AST {
 	}
 	
 	/**
-	 * 'x == y' expression. x and y are constrained to be integers
+	 * Class that represents a 'x == y' expression. 
+	 * x and y are constrained to be integers
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -171,7 +179,9 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	/**
-	 * '!x' expression. x is constrained to be a boolean
+	 * Class that represents a '!x' expression.
+	 * x is constrained to be a boolean
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -184,7 +194,9 @@ public class AST {
 	}
 	
 	/**
-	 * 'x || y' expression. x and y are constrained to be booleans
+	 * Class that represents a 'x || y' expression. 
+	 * x and y are constrained to be booleans
+	 *
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -198,7 +210,9 @@ public class AST {
 	}
 	
 	/**
-	 * 'x && y' expression. x and y are constrained to be booleans
+	 * Class that represents a 'x && y' expression. 
+	 * x and y are constrained to be booleans
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -212,8 +226,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents a boolean value
-	 *
+	 * Class that represents a boolean value
 	 */
 	public static class BoolNode extends Node {
 		final Boolean val;
@@ -224,8 +237,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents an integer value
-	 *
+	 *  Class that represents an integer value
 	 */
 	public static class IntNode extends Node {
 		final Integer val;
@@ -236,7 +248,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the empty value
+	 *  Class that represents the empty value
 	 * 
 	 * @author giuliabrugnatti
 	 *
@@ -248,8 +260,8 @@ public class AST {
 	}
 	
 	/**
-	 * It represents a function call, or a method one if called by another method of the same class
-	 * 
+	 * Class that represents a function call, 
+	 * or a method one if called by another method of the same class
 	 */
 	public static class CallNode extends Node {
 		final String id;
@@ -266,7 +278,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents a method call
+	 * Class that represents a method call
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -289,7 +301,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents an object instantiation
+	 *  Class that represents an object instantiation
 	 * 
 	 * @author giuliabrugnatti
 	 */
@@ -310,7 +322,7 @@ public class AST {
 	
 	//////////////////////////////////////DECLARATIONS
 	/**
-	 * It represents a function declaration
+	 * Class that represents the declaration of a function
 	 *
 	 */
 	public static class FunNode extends DecNode {// Versione HO: decommentato setType()
@@ -334,7 +346,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the declaration of a parameter
+	 * Class that represents the declaration of a parameter
 	 */
 	public static class ParNode extends DecNode {
 		final String id;
@@ -345,7 +357,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents a variable declaration
+	 * Class that represents a variable declaration
 	 *
 	 */
 	public static class VarNode extends DecNode {
@@ -358,7 +370,8 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the declaration of a field
+	 * Class that represents the declaration of a field
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -372,7 +385,8 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the declaration of a method
+	 * Class that represents the declaration of a method
+	 * 
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -400,7 +414,8 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the declaration of a class
+	 *  Class that represents the declaration of a class
+	 *
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -427,7 +442,7 @@ public class AST {
 	
 	/////////////////////////////////////////////////////////////////// TYPES
 	/**
-	 * It represents boolean-type in AST
+	 *  Class that represents boolean-type in AST
 	 */
 	public static class BoolTypeNode extends TypeNode {
 
@@ -436,7 +451,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents boolean-type in AST
+	 *  Class that represents boolean-type in AST
 	 */
 	public static class IntTypeNode extends TypeNode {
 
@@ -445,7 +460,8 @@ public class AST {
 	}
 	
 	/**
-	 * A type  represents a reference to a class (i.e., type of variable is a class)
+	 *  Class that represent a type which is a reference to a class 
+	 *  (i.e., type of variable is a class)
 	 * 
 	 */
 	public static class RefTypeNode extends TypeNode { // var a:ClasseA;  ====> VarNode("a"):RefTypeNode("ClasseA");
@@ -457,7 +473,7 @@ public class AST {
 	}
 
 	/**
-	 * It represents the empty type
+	 *  Class that represents the empty type
 	 * @author giuliabrugnatti
 	 */
 	public static class EmptyTypeNode extends TypeNode {//OO ; NB non in AST ma restituito da typeCheck()di EmptyNode()
@@ -466,7 +482,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents a functional-type in the AST
+	 *  Class that represents a functional-type in the AST
 	 */
 	public static class ArrowTypeNode extends TypeNode {
 		final List<TypeNode> parlist;
@@ -481,7 +497,7 @@ public class AST {
 	}
 	
 	/**
-	 * It represents the method type
+	 *  Class that represents the method type
 	 * @author giuliabrugnatti
 	 *
 	 */
@@ -494,10 +510,12 @@ public class AST {
 		@Override
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
+	
 	/**
-	 * It epresents the type of a class. 
-	 * I.e., contains all class' fields and methods definitions
-	 * (included the ones of the optional super-type)
+	 * Class that represents the type of a class.
+	 * 
+	 * It contains all the fields and methods definitions of the class; 
+	 * included the ones of the super-class if the class has one.
 	 * 
 	 * @author giuliabrugnatti
 	 */
