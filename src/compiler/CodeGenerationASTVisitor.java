@@ -14,14 +14,17 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
   CodeGenerationASTVisitor() {}
   CodeGenerationASTVisitor(boolean debug) {super(false,debug);} //enables print for debugging
 
-  private static List<List<String>> dispatchTables;//ne ho una per ogni classe indrizzi di tutti i metodi anche ereditati --> etichette; Ricorda dispatch table nello heap
-  													//la istanzio in progLetInNode perchè? perchè mi serve per le dichiarazioni, se un programma non ha dichiarazioni non mi serve(?)
-  													//NB funNode modified per la gestione dei tipi funzionali (offset doppio)
+  private static List<List<String>> dispatchTables;	//ne ho una per ogni classe indrizzi di tutti i metodi anche ereditati --> etichette; Ricorda dispatch table nello heap;
+  													
   //Dispatch pointer in AR dell'ambiente globale--> è reperibile all'offset della classe-->valore iniziale fp 
-	@Override
+	
+  	/**
+	 * Method for the generation of a program with declarations 
+	 */
+  	@Override
 	public String visitNode(ProgLetInNode n) {
 		if (print) printNode(n);
-		dispatchTables = new ArrayList<>();									//inizializzazione dispatch table; la faccio qui perchè
+		dispatchTables = new ArrayList<>(); 	//inizializzazione dispatch table; la faccio qui perchè
 		String declCode = null;
 		for (Node dec : n.declist) declCode=nlJoin(declCode,visit(dec));
 		return nlJoin(
@@ -32,7 +35,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			getCode()
 		);
 	}
-
+  	
+	/**
+	 * Method for the generation of a program without declarations 
+	 */
 	@Override
 	public String visitNode(ProgNode n) {
 		if (print) printNode(n);
@@ -41,23 +47,25 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"halt"
 		);
 	}
-
+	/**
+	 * Method for the generation of a function definition
+	 */
 	@Override
-	public String visitNode(FunNode n) {
+	public String visitNode(FunNode n) {//HO: modified for functional type management 
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
 			declCode = nlJoin(declCode,visit(dec));
 			popDecl = nlJoin(popDecl,"pop");
-			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {				//this is new
-				popDecl = nlJoin(popDecl,"pop");									//this is new
-			}																		//this is new
+			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {// dichiarazioni funzionali hanno offset doppio 
+				popDecl = nlJoin(popDecl,"pop");					//quindi devo aggiungere una pop
+			}																		
 		}
 		for (int i=0;i<n.parlist.size();i++) {
 			popParl = nlJoin(popParl,"pop");
-			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) {				//this is new
-				popParl = nlJoin(popParl,"pop");									//this is new
-			}																		//this is new
+			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	//dichiarazioni funzionali hanno offset doppio 
+				popParl = nlJoin(popParl,"pop");						//quindi devo aggiungere una pop
+			}																		
 		}
 		String funl = freshFunLabel();
 		putCode(
@@ -81,12 +89,18 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin("lfp", "push "+funl);		
 	}
 
+	/**
+	 *  Method for the generation of a variable (evaluate expression)
+	 */
 	@Override
 	public String visitNode(VarNode n) {
 		if (print) printNode(n,n.id);
 		return visit(n.exp);
 	}
-
+	
+	/** 
+	 * Method for the management of the print instruction 
+	 */
 	@Override
 	public String visitNode(PrintNode n) {
 		if (print) printNode(n);
@@ -96,40 +110,49 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);
 	}
 	
+	/** 
+	 * Method for the generation of a 'if-then-else' expression
+	 */
 	@Override
 	public String visitNode(IfNode n) {
 		if (print) printNode(n);
 	 	String l1 = freshLabel();
 	 	String l2 = freshLabel();		
 		return nlJoin(
-			visit(n.cond),
-			"push 1",
-			"beq "+l1,
-			visit(n.el),
-			"b "+l2,
+			visit(n.cond),	// it retrieves the condition result (it is constrained to be a boolean)
+			"push 1",		// it pushs 'true' to compare
+			"beq "+l1,		// if the condition is 'true', then jump to l1: then->branch
+			visit(n.el),	// otherwise it executes the else branch 
+			"b "+l2,		//	NB b unconditional jump-> it goes directly to end
 			l1+":",
 			visit(n.th),
 			l2+":"
 		);
 	}
 
+	/** 
+	 * Method for the generation of a '==' expression
+	 */
 	@Override
 	public String visitNode(EqualNode n) {
 		if (print) printNode(n);
 	 	String l1 = freshLabel();
 	 	String l2 = freshLabel();
 		return nlJoin(
-			visit(n.left),
-			visit(n.right),
-			"beq "+l1,
-			"push 0",
+			visit(n.left),		//it retrieves the left value
+			visit(n.right),		//it retrieves the right value
+			"beq "+l1,			//if they are equals, then it jumps to l1-> equals label 
+			"push 0",			//otherwise it pushes 0(=false) and jump to the end
 			"b "+l2,
 			l1+":",
-			"push 1",
+			"push 1",			//it pushes 1(=true)
 			l2+":"
 		);
 	}
 	
+	/** 
+	 * Method for the generation of a '*' expression
+	 */
 	@Override
 	public String visitNode(TimesNode n) {
 		if (print) printNode(n);
@@ -140,6 +163,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);	
 	}
 
+	/** 
+	 * Method for the generation of a '+' expression
+	 */
 	@Override
 	public String visitNode(PlusNode n) {
 		if (print) printNode(n);
@@ -150,28 +176,44 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);
 	}
 	
+	/** 
+	 * Method for the generation of a '/' expression
+	 */
 	@Override
-	public String visitNode(BoolNode n) {
-		if (print) printNode(n,n.val.toString());
-		return "push "+(n.val?1:0);
-	}
-
-	@Override
-	public String visitNode(IntNode n) {
-		if (print) printNode(n,n.val.toString());
-		return "push "+n.val;
-	}
-	////////////////////
-	//Language extension
-	@Override
-	public String visitNode(LessEqualNode n) {
+	public String visitNode(DivNode n) {//LE
 		if (print) printNode(n);
-	 	String l1 = freshLabel();		//numeri uguali, o primo minore del secondo
-	 	String l2 = freshLabel();		//Secondo maggiore del primo
 		return nlJoin(
 			visit(n.left),
 			visit(n.right),
-			"bleq "+l1,					//bleq: salta se il primo è minore uguale del secondo
+			"div"
+		);	
+	}
+	
+	/** 
+	 * Method for the generation of a '-' expression
+	 */
+	@Override
+	public String visitNode(MinusNode n) {//LE
+		if (print) printNode(n);
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"minus"
+		);	
+	}
+	
+	/** 
+	 * Method for the generation of a '<=' expression
+	 */
+	@Override
+	public String visitNode(LessEqualNode n) {//LE
+		if (print) printNode(n);
+	 	String l1 = freshLabel();		// first == second; first <= second
+	 	String l2 = freshLabel();		//	second>= first
+		return nlJoin(
+			visit(n.left),
+			visit(n.right),
+			"bleq "+l1,					//bleq: it jumps if: first <= second
 			"push 0",
 			"b "+l2,
 			l1+":",
@@ -180,13 +222,16 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);
 	}
 	
+	/** 
+	 * Method for the generation of a '>=' expression
+	 */
 	@Override
-	public String visitNode(GreaterEqualNode n) {
+	public String visitNode(GreaterEqualNode n) {//LE
 		if (print) printNode(n);
 	 	String l1 = freshLabel();
 	 	String l2 = freshLabel();
 		return nlJoin(
-			visit(n.right),				//non avendo una bgeq: semplicemnte inverto l'ordine in cui metto i valori sullo stack
+			visit(n.right),				//I have not a 'bgeq' instruction therefore I just visit the value in a reverse order
 			visit(n.left),
 			"bleq "+l1,
 			"push 0",
@@ -196,29 +241,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			l2+":"
 		);
 	}
-	
+	/** 
+	 * Method for the generation of a '!' expression
+	 */
 	@Override
-	public String visitNode(DivNode n) {
-		if (print) printNode(n);
-		return nlJoin(
-			visit(n.left),
-			visit(n.right),
-			"div"
-		);	
-	}
-	
-	@Override
-	public String visitNode(MinusNode n) {
-		if (print) printNode(n);
-		return nlJoin(
-			visit(n.left),
-			visit(n.right),
-			"minus"
-		);	
-	}
-	//Idea: 1 - n.exp dove n.exp è vincolato ad essere 0 o 1
-	@Override
-	public String visitNode(NotNode n) {
+	public String visitNode(NotNode n) {//Idea: 1 - n.exp where n.exp it is constrained to be a boolean
 		if (print) printNode(n);
 		return nlJoin(
 			"push 1",
@@ -227,9 +254,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);	
 	}
 	
+	/** 
+	 * Method for the generation of a '&&' expression
+	 */
 	// Idea:considera l'aritmetica binaria 0*0=0; 0*1=0, ecc.
 	@Override
-	public String visitNode(AndNode n) {
+	public String visitNode(AndNode n) {//LE
 		if (print) printNode(n);
 		return nlJoin(
 			visit(n.left),
@@ -237,27 +267,50 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"mult"					
 		);	
 	}
-	
+	/** 
+	 * Method for the generation of a '||' expression
+	 */
 	@Override
-	public String visitNode(OrNode n) {
+	public String visitNode(OrNode n) {//LE
 		if (print) printNode(n);
-		String l1 = freshLabel();		//risultato = 1
-		String l2 = freshLabel();		//risultato = 0
+		String l1 = freshLabel();		//result = 1
+		String l2 = freshLabel();		//result = 0
 		return nlJoin(
 			visit(n.left),
 			"push 1",			
-			"beq " + l1,			//se il primo elemento è uno non controllo nemmeno il secondo; restituisco direttamente uno
-			 visit(n.right),		//se il primo elemento era zero allora controllo il secondo; se è uno restituisco uno
+			"beq " + l1,			//if first ==1; it returns 1 without checking the whole expression
+			 visit(n.right),		//else if first ==0, then it checks the second value; if second==1 then it returns 1
 			"push 1",
 			"beq"+l1+":",
-			"push 0",				//sono obbligata a mettere lo zero, perchè sullo stack ci avevo messo un uno per fare il controllo prima
-			"b"+ l2,				// b:salto incondizionato (ho già messo uno 0 allo step precedente non devo fare nulla posso solo tornare.
+			"push 0",				//it pushed 0 and then it jumps directly to end
+			"b"+ l2,				
 			l1+":",
 			"push 1",
 			l2+":"	
 		);	
 	}
-	////////////////////////////////////////
+	
+	/** 
+	 * Method for the generation of a boolean node
+	 */
+	@Override
+	public String visitNode(BoolNode n) {
+		if (print) printNode(n,n.val.toString());
+		return "push "+(n.val?1:0);
+	}
+
+	/** 
+	 * Method for the generation of a integer node
+	 */
+	@Override
+	public String visitNode(IntNode n) {
+		if (print) printNode(n,n.val.toString());
+		return "push "+n.val;
+	}
+	
+	/** 
+	 * Method for the generation of a class definition
+	 */
 	@Override
 	public String visitNode(ClassNode n) {
 		if (print) printNode(n,n.id);
@@ -294,30 +347,33 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				dispatchTablesOnHeap
 				);		
 	}
-	
+	/** 
+	 * Method for the generation of a empty node
+	 */
 	@Override
-	public String visitNode(EmptyNode n) {
+	public String visitNode(EmptyNode n) {//OO
 		if (print) printNode(n);
 		return "push -1";//-1 è un valore diverso da qualsiasi object pointer di qualsiasi oggetto creato
 	}
-	//CONTROLLA SE DEVI FAR EUNA O DUE POP
-	/*
-		MethodNode
-		– genera un’etichetta nuova per il suo indirizzo e la
-		mette nel suo campo "label" (aggiungere tale campo)
-		– genera il codice del metodo (invariato rispetto a
-		funzioni) e lo inserisce in FOOLlib con putCode()
-		– ritorna codice vuoto (null)
+
+	/** 
+	 * Method for the generation of a method definition
 	 */
 	@Override
-	public String visitNode(MethodNode n) {
+	public String visitNode(MethodNode n) {// NB parameters push is done by call/class-call node
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
 			declCode = nlJoin(declCode,visit(dec));
-			popDecl = nlJoin(popDecl,"pop");
+			popDecl = nlJoin(popDecl,"pop");	// NB i metodi non possono avere dichairazioni funzionali
+			
 		}
-		for (int i=0;i<n.parlist.size();i++) popParl = nlJoin(popParl,"pop");
+		for (int i=0;i<n.parlist.size();i++)  {
+			popParl = nlJoin(popParl,"pop");
+			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	//dichiarazioni funzionali hanno offset doppio 
+				popParl = nlJoin(popParl,"pop");						//quindi devo aggiungere una pop
+			}	
+		}
 		n.label = freshFunLabel();//genero un etichetta per il suo indirizzo e la metto nel campo label
 		putCode(
 			nlJoin(					//genero il codice del metodo e lo metto in putcode
@@ -331,21 +387,24 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				"sra", 			// set $ra to popped value
 				"pop", 			// remove Access Link from stack
 				popParl, 		// remove parameters from stack
-				"sfp", 			// set $fp to popped value (Control Link)
-				"ltm", 			// load $tm value (function result)
-				"lra", 			// load $ra value
+				"sfp", 			// set $fp to popped value (=Control Link)  (caller AR)
+				"ltm", 			// load $tm value (function result) on the top of the stack
+				"lra", 			// load $ra value (return address)
 				"js"  			// jump to to popped address
 			)
 		);
 		return "";	//torno null
 	}
-		
+	
+	/** 
+	 * Method for the generation of a method call
+	 */
 	@Override
-	public String visitNode(ClassCallNode n) {
+	public String visitNode(ClassCallNode n) {//OO
 		if (print) printNode(n,n.methodID);
 		String argCode = null, getAR = null;
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));
-		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");
+		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");	// it retrieves the correct AR of (object) declaration.
 		return nlJoin(
 			"lfp", 			// load Control Link (pointer to frame of function "id" caller)
 			argCode, 		// generate code for argument expressions in reversed order
@@ -353,96 +412,51 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
                           	// by following the static chain (of Access Links)
 			
 			"push "+n.entry.offset,
-			"add",
-			"lw",			//load value of id variable
+			"add",			// get object pointer's address
+			"lw",			// load value of id variable(address of object instance)
 			
-			"stm",
-			"ltm",			//duplicate the value
-			
-			"ltm",
-			"lw",			//follow the access link
+			"stm","ltm", "ltm",// duplicate top of the stack (contains object pointer)
+			"lw",			// put dispatch pointer on stack (follow the access link)
 			"push "+n.methodEntry.offset,
-			"add",
-			"lw",			//retrieve the address of the called method
-			"js"			//jump to the method
+			"add",			// get method's label address
+			"lw",			//retrieve the address of the called method;  get value (label of method's subroutine)
+			"js"			//jump to the method ( subroutine (put address of next instruction in ra))
 		);
 	}
-
-	/*
-	 * NewNode new ID()
-	 * – prima:
-	 * • si richiama su tutti gli argomenti in ordine di apparizione
-	 * (che mettono ciascuno il loro valore calcolato sullo stack)
-	 * – poi:
-	 * • prende i valori degli argomenti, uno alla volta, dallo stack e li
-	 * mette nello heap, incrementando $hp dopo ogni singola copia
-	 * • scrive a indirizzo $hp il dispatch pointer recuperandolo da
-	 * contenuto indirizzo MEMSIZE + offset classe ID
-	 * • carica sullo stack il valore di $hp (indirizzo object pointer 
-	 * da ritornare) e incrementa $hp
-	 * – nota: anche se la classe ID non ha campi l’oggetto
-	 * allocato contiene comunque il dispatch pointer
-	 * • == tra object pointer ottenuti da due new è sempre falso
+	
+	/** 
+	 * Method for the generation of an object instantiation
 	 */
 	@Override
-	public String visitNode(NewNode n) {
+	public String visitNode(NewNode n) {//OO
 		if (print) printNode(n,n.id);
 		String argCode = null, putArgsOnHeap = null;
 		for (int i=0 ; i<n.arglist.size() ; i++) {
-			argCode=nlJoin(argCode,visit(n.arglist.get(i)));
+			argCode=nlJoin(argCode,visit(n.arglist.get(i))); // generate code for every field
 			putArgsOnHeap = nlJoin(putArgsOnHeap, 
 					"lhp", 		
-					"sw",		//in this way I am writing the value on the stack on the heap
+					"sw",					//store the value on the stack on the heap
 					
-					"lhp",
-					"push 1",
-					"add",
-					"shp"		//take hp value, increment it, and put it in hp
+					"lhp","push 1","add","shp"	// increment hp
 					);
 		}
 		return nlJoin(
 				argCode,
 				putArgsOnHeap,
 				
-				"push "+(ExecuteVM.MEMSIZE+n.entry.offset),
-				"lw",
-				"lhp",
-				"sw",		//write in hp the dispatch pointer
+				"push "+(ExecuteVM.MEMSIZE+n.entry.offset),// push dispatch pointer's addres
+				"lw",		// put the dispatch pointer on top of the stack
+
+				"lhp",		// push hp on stack
+				"sw",		// store he dispatch pointer in hp
+				"lhp",		// copy object pointer (to be returned) on the stack; put hp on stack
 				
-				"lhp",		//copy object pointer (to be returned) on the stack
-				
-				"lhp",
-				"push 1",
-				"add",
-				"shp"		//increment hp
+				"lhp","push 1","add","shp"//increment hp
 				);
 	}
-	/*
-	 * CallNode ID()
-	 * – codice ritornato modificato: due cose recuperate 
-	 * come valori dall'AR dove è dichiarato l'ID con
-	 * meccanismo usuale di risalita catena statica
-	 * • indir (fp) ad AR dichiaraz. funzione (recuperato a offset ID)
-	 * 		– usato per settare nuovo Access Link (AL)
-	 * • indir funzione (recuperato a offset ID - 1)
-	 * – usato per saltare a codice funzione
-	 * 
-	 * VERSIONE OO
-	 * CallNode ID()
-	 * – controllo se ID è un metodo (tipo "MethodTypeNode" in STentry)
-	 * • se non lo è, invariato
-	 * • se lo è, modificato:
-	 * 		– dopo aver messo sullo stack l’Access Link impostandolo
-	 * 			all’indirizzo ottenuto tramite risalita della catena statica
-	 * 			(in base a differenza di nesting level di ID) e aver
-	 * 			duplicato tale indirizzo sullo stack
-	 * 				· fin qui il codice generato è invariato
-	 *	 			· si noti che in questo caso tale indirizzo è l’object pointer
-	 * 		– recupera (usando l’offset di ID nella dispatch table
-	 * 			riferita dal dispatch pointer dell’oggetto) l'indirizzo del metodo a cui saltare
-	 */
+
 	@Override
-	public String visitNode(CallNode n) {
+	public String visitNode(CallNode n) {//OO
 		if (print) printNode(n,n.id);
 		String argCode = null, getAR = null;
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));
@@ -493,7 +507,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	 */
 //invariato non ci importa se risalendo la catena statica giunga ad AR in stack o a un oggetto in heap comunque prendo il valore che c'è all'offset della SEntry
 	@Override
-	public String visitNode(IdNode n) {
+	public String visitNode(IdNode n) {//HO 
 		if (print) printNode(n,n.id);
 		String getAR = null;
 		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");		

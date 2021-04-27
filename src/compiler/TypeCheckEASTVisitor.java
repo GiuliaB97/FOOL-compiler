@@ -296,7 +296,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		}
 		return null;
 	}
-
+	
+	////////////////////////////////////////////TYPES
 	@Override
 	public TypeNode visitNode(BoolTypeNode n) {
 		if (print) printNode(n);
@@ -317,7 +318,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	
 
 	@Override
-	public TypeNode visitNode(EmptyNode n) {
+	public TypeNode visitNode(EmptyNode n) {// OO
 		if (print) printNode(n);
 		return new EmptyTypeNode();				//torna semplicemente EmptyTypeNode
 	}
@@ -331,14 +332,14 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	@Override
-	public TypeNode visitNode(MethodTypeNode n) throws TypeException {
+	public TypeNode visitNode(MethodTypeNode n) throws TypeException {// OO
 		if (print) printNode(n);
 		visit(n.fun);
 		return null;
 	}
 	
 	@Override
-	public TypeNode visitNode(ClassTypeNode n) throws TypeException {
+	public TypeNode visitNode(ClassTypeNode n) throws TypeException {// OO
 		if (print) printNode(n);
 		return null;
 	}
