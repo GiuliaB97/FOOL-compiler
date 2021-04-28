@@ -302,30 +302,28 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n);
 		return "push -1";//-1 è un valore diverso da qualsiasi object pointer di qualsiasi oggetto creato
 	}
-////////////////////////////////////////////////////////////////////////aaaaaaaaaaaaaaaaaaaaaaaa
+
 	/** 
-	 * Method for the generation of a class definition
+	 * Method for the generation of a call of a function or a method inside a class
 	 */
 	@Override
 	public String visitNode(CallNode n) {//OO
 		if (print) printNode(n,n.id);
 		String argCode = null, getAR = null;
-		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));
-		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");
-		if(n.entry.type instanceof MethodTypeNode) {	// MOD (OO): chiamata di un metodo locale cioè dall'interno di un altro metodo di un oggetto
+		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));// it creates code for parameter expressions in reversed order
+		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");// it finds the AL (pointer to frame of function's declaration, reached as for variable id)
+		if(n.entry.type instanceof MethodTypeNode) {//OO: chiamata di un metodo locale cioè dall'interno di un altro metodo di un oggetto
 			return nlJoin(
-				"lfp", 			// carico Control Link (puntatore al frame del chiamante)
+				"lfp", 			// push CL (pointer to caller's frame) used to ascend to declaration AR
 				argCode, 		// generate code for argument expressions in reversed order
 				"lfp", getAR,   // raggiungo l'address del frame contente la dichiarazione di ID, in pratica arrivo all'oggetto sull'heap
 	                            // seguendo sempre la catena statica di Access Links (come la normale chiamata di una funzione)
-	            "stm", 			// pop dell'Access Link in $tm per duplicarlo
-	            "ltm", 			// carico sullo stack l'Access Link (che è l'object pointer)
-	            "ltm",        	// duplico il valore precedente, cioè AL / obj pointer
-	            "lw",		  	// carica sullo stack l'indirizzo della dispatch table dell'oggetto (perchè l'obj pointer punta direttamente alla cella dove è memorizzato il dispatch pointer)
-	            "push "+n.entry.offset, "add", // calcolo indirizzo della cella in dispatch table dove è memorizzato l'indirizzo del metodo
-	            "lw", 			// carico sullo stack l'indirizzo del metodo
-	            "js" 			// salto
-			);
+	            "stm","ltm","ltm",// duplicate top of the stack (contains AR of declaration)
+	            "lw",		  	// load the address of the obj in the dispatch table(why? l'obj pointer points to the address of the dispatch pointer)
+	            "push "+n.entry.offset, "add", // calculate the address of the method (label) in the dispatch table
+	            "lw", 			// get value (label(=address) of method's subroutine);
+	            "js" 			// jump to popped address[ of the subroutine] (saving address of subsequent instruction in $ra)			);
+	            );
 		} else {
 			return nlJoin(
 				"lfp", 		  // load Control Link (pointer to frame of function "id" caller)
@@ -335,7 +333,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	            "stm", 		  // set $tm to popped value (lo devo usare 2 volte)
 	            "ltm", "push "+n.entry.offset, "add", "lw", 	//carico Access Link - andandolo a prendere nello stack in posizione precedente all'indirizzo della funzione
 	            "ltm", "push "+(n.entry.offset-1), "add", "lw", //carico indirizzo funzione
-	            "js"  		  // jump to popped address (saving address of subsequent instruction in $ra)
+	            "js"  		  // jump to popped address[ of the subroutine] (saving address of subsequent instruction in $ra)
 			);
 		}
 	}
@@ -383,14 +381,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		for (Node dec : n.declist) {
 			declCode = nlJoin(declCode,visit(dec));
 			popDecl = nlJoin(popDecl,"pop");
-			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {// dichiarazioni funzionali hanno offset doppio 
-				popDecl = nlJoin(popDecl,"pop");					//quindi devo aggiungere una pop
+			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {// functional declarations occupy double space 
+				popDecl = nlJoin(popDecl,"pop");					// therefore an additional pop must be added
 			}																		
 		}
 		for (int i=0;i<n.parlist.size();i++) {
 			popParl = nlJoin(popParl,"pop");
-			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	//dichiarazioni funzionali hanno offset doppio 
-				popParl = nlJoin(popParl,"pop");						//quindi devo aggiungere una pop
+			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	// functional declarations occupy double space 
+				popParl = nlJoin(popParl,"pop");						// therefore an additional pop must be added
 			}																		
 		}
 		String funl = freshFunLabel();
@@ -461,7 +459,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				"js"  			// jump to to popped address
 			)
 		);
-		return "";	//torno null
+		return "";	//return null
 	}
 	
 	/** 
@@ -471,7 +469,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	public String visitNode(ClassNode n) {
 		if (print) printNode(n,n.id);
 		if(n.superID!=null) {
-			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // devo copiare tutta la dispatch table della classe da cui estendo ; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 	di dispatchTables
+			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // devo copiare tutta la dispatch table della classe da cui estendo ; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 (a offset -1 credo ci sia l'indirizzo della funzione)	di dispatchTables
 		} else {			
 			dispatchTables.add(new ArrayList<>());
 		}
@@ -479,35 +477,31 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		for(MethodNode m:n.methods) {
 			visit(m);
 			if(m.offset >= dispatchTables.get(dispatchTables.size()-1).size()) {
-				dispatchTables.get(dispatchTables.size()-1).add(m.label);
+				dispatchTables.get(dispatchTables.size()-1).add(m.label);// normalmente si usa l'etichetta del metodo della super-classe
 			} else {				
-				dispatchTables.get(dispatchTables.size()-1).set(m.offset, m.label);
+				dispatchTables.get(dispatchTables.size()-1).set(m.offset, m.label);// overriding: si usa l'etichetta del metodo della classe che estende
 			}
 		}
-		String dispatchTablesOnHeap = null;
-		for(String s: dispatchTables.get(dispatchTables.size()-1)) {
-			dispatchTablesOnHeap = nlJoin(
+		String dispatchTablesOnHeap = null;// codice per generare sull'heap la dispach table
+		for(String s: dispatchTables.get(dispatchTables.size()-1)) {//recupero la lista corretta
+			dispatchTablesOnHeap = nlJoin(				// per ogni metodo aggiungo la label sull'heap
 					dispatchTablesOnHeap,
-					"push "+s,
-					"lhp", 		
-					"sw",		//in this way I am writing the string s on the heap
-					"lhp",
-					"push 1",
-					"add",
-					"shp"		//take hp value, increment it, and put it in hp		
+					"push "+s,	// push the label
+					"lhp", "sw",	// store label at address pointed by hp
+					"lhp","push 1","add","shp"//increment hp		
 					);
 		}
 		
 		return nlJoin(
-				"lhp",
-				dispatchTablesOnHeap
+				"lhp",// metto sullo stack il dispatch pointer che punta alla dispach table della classe
+				dispatchTablesOnHeap// poi il codice per generare la dispach table sull'heap 
 				);		
 	}
 	/** 
 	 * Method for the generation of a method call
 	 */
 	@Override
-	public String visitNode(ClassCallNode n) {//OO
+	public String visitNode(ClassCallNode n) {//OO:simile a CallNode solo che occorre risalire prima al refID
 		if (print) printNode(n,n.methodID);
 		String argCode = null, getAR = null;
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));
