@@ -10,21 +10,27 @@ import compiler.lib.*;
 public class TypeRels {
 
 	static Map<String,String> superType;//mappa l'ID di classe nell'ID della sua superclasse; 
-
-
-	//MOD HO e OO: gestione tipi funzionali: entrambi devono essere arrowtypenode con stesso numero di parametri e deve valere covarianza sul tipo di ritorno, e controvarianza sul tipo dei parametri
-	public static boolean isSubtype(TypeNode a, TypeNode b) {
+	
+	/**
+	 * Method that checks if the first expression is subtype of the second.
+	 * 
+	 * @param a is a type node
+	 * @param b is a type node
+	 * @return
+	 */
+	public static boolean isSubtype(TypeNode a, TypeNode b) {//MOD HO e OO: gestione tipi funzionali: entrambi devono essere arrowtypenode con stesso numero di parametri e deve valere covarianza sul tipo di ritorno, e controvarianza sul tipo dei parametri
+		
 		if (a instanceof EmptyTypeNode && b instanceof RefTypeNode) {//MOD OO: EmptyTypeNode sottipo di qualsiasi RefTypeNode
 			return true;
-		}else if (a instanceof RefTypeNode && b instanceof RefTypeNode) {//controllo se a è sottoclasse di b
-			RefTypeNode refA = (RefTypeNode)a;			//necessario se no no posso accedere a id
-			RefTypeNode refB = (RefTypeNode)b;			//necessario se no no posso accedere a id
+		}else if (a instanceof RefTypeNode && b instanceof RefTypeNode) {
+			RefTypeNode refA = (RefTypeNode)a;	//Correct class instantiation is needed to be able to access to id field
+			RefTypeNode refB = (RefTypeNode)b;			
 			if (refA.id.equals(refB.id)) {
 				return true;
 			}else {
-				while(superType.containsKey(refA.id)) {
-					String type = superType.get(refA.id);
-					if(type.equals(refB.id)) {
+				while(superType.containsKey(refA.id)) {		//If the expression has a supertype
+					String type = superType.get(refA.id);	//it get it from the map
+					if(type.equals(refB.id)) {				//and compares it from the one of the second expression
 						return true;
 					}
 				}
@@ -65,7 +71,12 @@ public class TypeRels {
 		return a.getClass().equals(b.getClass()) || ((a instanceof BoolTypeNode) && (b instanceof IntTypeNode));
 	}
 
-
+	/**
+	 * Methods that checks if the two expressions have a common ancestors
+	 * @param a is a type node
+	 * @param b is a type node
+	 * @return null if they do not have a common ancestor, or the common ancestor type node
+	 */
 	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
 		if (a instanceof EmptyTypeNode && b instanceof RefTypeNode) {
 			return b;
@@ -79,7 +90,7 @@ public class TypeRels {
 			while (superType.containsKey(refA.id) ) {
 				refA = new RefTypeNode(superType.get(refA.id));				//vado a recuperare la successiva superclasse
 				if(isSubtype(b, refA)) 
-					return refA;								//torno il RefTypeNode a alla superclasse
+					return refA;								//torno il RefTypeNode alla superclasse
 			}
 		}
 
@@ -108,6 +119,6 @@ public class TypeRels {
 				}
 			}
 		}
-		return null;														//in ogni altro caso ritorno null
+		return null;
 	}
 }
