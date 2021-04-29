@@ -5,21 +5,22 @@ import java.util.*;
 import compiler.AST.*;
 import compiler.exc.*;
 import compiler.lib.*;
-
+/**
+ * The aim of the class is to enrich the tree; 
+ * It is generated at compile time and it matches declarations with occurences.
+ * The class contain a list of tables organized, whom organization depends on the scope:
+ * global environment is at nesting level 0, 
+ * the map and the nesting level variable are always updated 
+ * (incrementing the nesting level when you enter in a new scope and decremented it when you go out)
+ * therefore they point to the level in which the program is currently.
+ *  
+ *  
+ * @author giuliabrugnatti
+ *
+ */
 public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
-	private List<Map<String, STentry>> symTable = new ArrayList<>();
-	/*
-	 * Ho una lista di tabelle organizzata per scope ambiente globale nesting level 0 la mappa a indice nesting level è quella in cui siamo attualmente.
-	 * quando entro in uno scope aumento il nesting level e quando esco lo decremento
-	 * 
-	 * Quando faccio qualcosa con la symbol table : quando incontro dichiarazioni/usi entro/esco da scope:
-	 * 
-	 * se ho un prog node: programma senza dichairazione non faccio nulla continuo semplicemente la mia visita uguale se incontro un intero, times, plus, bool ecc.
-	 * 
-	 * Questa visita torna void come la print perchè il suo obiettivo è arricchire l'albero quando incontra un uso che fa match con una dichiarazione 
-	 * symbol table: lista di mappe; ogni mappa mappa nomi di identificatori a stentry: 
-	 * che possono contenere varie cose per il momento iniziamo col nesting level
-	 */
+	private List<Map<String, STentry>> symTable = new ArrayList<>();/*It is used when the program meet declarations and uses (and enter or exit in a new scope)
+	*/
 	private int nestingLevel=0; //Nesting level attuale: parte da zero ambiente globale
 	private int decOffset=-2; /*counter for offset of local declarations at current nesting level 
 								parte da -2 e lo decommento ogni volta che incontro una nuova dichiarazione (di classe) 
@@ -86,7 +87,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 
 	@Override
-	public Void visitNode(ProgNode n) {
+	public Void visitNode(ProgNode n) {//if I have a program with no declaration I have to do nothing.
 		if (print) printNode(n);
 		visit(n.exp);
 		return null;
@@ -409,7 +410,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			}
 		}
 		
-		for (int i=0; i<n.methods.size(); i++) {						//Stesso discorso dei campi
+		for (int i=0; i<n.methods.size(); i++) { //same thing of the fields
 			if(!hs.contains(n.methods.get(i).id)) {
 				hs.add(n.methods.get(i).id);
 			} else {
@@ -417,15 +418,15 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				stErrors++;
 			}
 			visit(n.methods.get(i));
-			if(n.methods.get(i).offset < ((ClassTypeNode)hm.get(n.id).type).allMethods.size()) {//aggiorno allMethods settando la posizione offset al tipo funzionale (primo metodo offset 0)
+			if(n.methods.get(i).offset < ((ClassTypeNode)hm.get(n.id).type).allMethods.size()) {//update allMethods setting the offset position to the functional type (1rst method= offset 0)
 				((ClassTypeNode)hm.get(n.id).type).allMethods.set(n.methods.get(i).offset, (MethodTypeNode) n.methods.get(i).getType());
 			} else {				
 				((ClassTypeNode)hm.get(n.id).type).allMethods.add( (MethodTypeNode) n.methods.get(i).getType());
 			}
 		}          
-														// all'uscita della dichairazione di classe
-		symTable.remove(nestingLevel--);				// viene rimosso il livello di VT corrente 
-		decOffset = prevNLDecOffset;					// e ripristinato l'offset
+														// when exting from the declaration 
+		symTable.remove(nestingLevel--);				// the level of the current VT must be removed 
+		decOffset = prevNLDecOffset;					// reset l'offset
 		return null;
 		
 	}
@@ -453,9 +454,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			virtualTable.put(n.id, new STentry(nestingLevel, n.getType(),decOffset++));
 		}
 		
-		//creare una nuova hashmap per la symTable
 		nestingLevel++;
-		Map<String, STentry> hmn = new HashMap<>();
+		Map<String, STentry> hmn = new HashMap<>();//a new map must be created 
 		symTable.add(hmn);
 		int prevNLDecOffset=decOffset; // stores counter for offset of declarations at previous nesting level 
 		decOffset=-2;
@@ -467,9 +467,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				stErrors++;
 			}
 		for (Node dec : n.declist) visit(dec);
-		visit(n.exp);
-		//rimuovere la hashmap corrente poiche' esco dallo scope               
-		symTable.remove(nestingLevel--);
+		visit(n.exp);            
+		symTable.remove(nestingLevel--);// map of the current level must be removed because I am exiting from the scope
 		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level 
 		return null;
 	}
@@ -478,14 +477,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	public Void visitNode(ClassCallNode n) {
 		if (print) printNode(n);
 		STentry entry = stLookup(n.classID);
-		if (entry != null) {//cercata come in IdNode e CallNode
+		if (entry != null) {//searched in the same way of IdNode andCallNode
 			n.entry = entry;
 		} else {
 			System.out.println("Class id " + n.classID + " at line "+ n.getLine() + " not declared");
 			stErrors++;
 		}
 		STentry methodEntry = classTable.get(((RefTypeNode)entry.type).id).get(n.methodID);
-		if (methodEntry != null) {//cercata nella VT (raggiunta tramite CT della classe del tipo RefTypeNode)
+		if (methodEntry != null) {// searched in VT ( reached using CT of the class of the type RefTypeNode)
 			n.methodEntry = methodEntry;
 			n.nl = nestingLevel;
 		} else {
@@ -499,8 +498,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	@Override
 	public Void visitNode(NewNode n) {
 		if (print) printNode(n);
-		if(classTable.containsKey(n.id)) {//ID deve essere in CT e STentry presa direttamente da livello 0 della ST
-			STentry entry = symTable.get(0).get(n.id);
+		if(classTable.containsKey(n.id)) {//ID must be in CT 
+			STentry entry = symTable.get(0).get(n.id);//and STentry took at level 0 of the ST
 			n.entry = entry;
 			n.nl = nestingLevel;
 		} else {

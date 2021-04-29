@@ -8,7 +8,14 @@ import static compiler.lib.FOOLlib.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
+/**
+ * The main of the class is to generate a String corrisponding to whole program.
+ * To do this it implements a bottom up traversal of the tree (which is complete 
+ * because the front-end phases have already been completed
+ * 
+ * @author giuliabrugnatti
+ *
+ */
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
 
   CodeGenerationASTVisitor() {}
@@ -19,20 +26,23 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
   //Dispatch pointer in AR dell'ambiente globale--> è reperibile all'offset della classe-->valore iniziale fp 
 	
   	/**
-	 * Method for the generation of a program with declarations 
+	 * Method for the generation of a program with declarations.
+	 * It creates a string which is the result of the concatenation 
+	 * of the declaration present in the let-in. 
+	 * Next it visit the body of the program.
 	 */
   	@Override
 	public String visitNode(ProgLetInNode n) {
 		if (print) printNode(n);
-		dispatchTables = new ArrayList<>(); 	//inizializzazione dispatch table; la faccio qui perchè
+		dispatchTables = new ArrayList<>();//The dispatch table is used only in a program with declaration, therefore it is initialized here 
 		String declCode = null;
-		for (Node dec : n.declist) declCode=nlJoin(declCode,visit(dec));
+		for (Node dec : n.declist) declCode=nlJoin(declCode,visit(dec));//previous to execute the body of the program it musts allocate the AR, if not the program will use variable that would not be reachable  
 		return nlJoin(
-			"push 0",	
-			declCode, // generate code for declarations (allocation)			
+			"push 0",	// fake offset needed to make the Main complaint with the AR defined 
+			declCode,	// generate code for declarations (allocation)			
 			visit(n.exp),
-			"halt",
-			getCode()
+			"halt",		//Exit from the vm
+			getCode()	//return the final string containing the whole concatenation of the code
 		);
 	}
   	
@@ -50,7 +60,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	
 	
 	/** 
-	 * Method for the management of the print instruction 
+	 * Method for the management of the print instruction.
+	 * It prints the top of the stack without altering it.
 	 */
 	@Override
 	public String visitNode(PrintNode n) {
@@ -62,7 +73,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	}
 	
 	/** 
-	 * Method for the generation of a 'if-then-else' expression
+	 * Method for the generation of a 'if-then-else' expression.
+	 * 
 	 */
 	@Override
 	public String visitNode(IfNode n) {
@@ -83,16 +95,14 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	
 	/**
 	 * Method for the generation of an identifier.
+	 * HO : If the type is a functional: type the address of AR(offset ID) for the function declaration 
+	 * and function address offset ID - 1)
 	 */
 	@Override
-	public String visitNode(IdNode n) {
-		/*HO : If type is not functional no modification id needed 
-		 * on the contrary if it is a functional type the address of AR(offset ID) for the function declaration 
-		 * and function address offset ID - 1)
-		 */
+	public String visitNode(IdNode n) {//HO : If type is not functional no modification id needed; on the contrary if it is a functional type the address of AR(offset ID) for the fnct declaration and fnct address offset ID - 1)
 		if (print) printNode(n,n.id);
 		String getAR = null;
-		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");	// ascend Control Links chain until AR of declaration
+		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");	// ascend CL chain until AR of declaration
 		if(n.entry.type instanceof ArrowTypeNode) { //HO: if id is functional 
 			return nlJoin( 
 				"lfp", getAR, // retrieve address of frame containing "id" declaration			NB indir (fp) ad AR dichiaraz. funzione (recuperato a offset ID)
@@ -304,7 +314,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	}
 
 	/** 
-	 * Method for the generation of a call of a function or a method inside a class
+	 * Method for the generation of a call of a function or a method inside a class.
+	 * It strats the construction of the AR of the function that will be terminated 
+	 * with the visit of the FunNode, or the MethodNode 
 	 */
 	@Override
 	public String visitNode(CallNode n) {//OO
@@ -314,10 +326,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");// it finds the AL (pointer to frame of function's declaration, reached as for variable id)
 		if(n.entry.type instanceof MethodTypeNode) {//OO: chiamata di un metodo locale cioè dall'interno di un altro metodo di un oggetto
 			return nlJoin(
-				"lfp", 			// push CL (pointer to caller's frame) used to ascend to declaration AR
-				argCode, 		// generate code for argument expressions in reversed order
-				"lfp", getAR,   // raggiungo l'address del frame contente la dichiarazione di ID, in pratica arrivo all'oggetto sull'heap
-	                            // seguendo sempre la catena statica di Access Links (come la normale chiamata di una funzione)
+				"lfp", 			// push CL (pointer to caller's frame) used to ascend to declaration AR: it is needed to retrieve the parameters
+				argCode, 		// generate code for argument expressions in reversed order (from N to 1)
+				"lfp", getAR,   // it reaches address of the frame containing the ID declaration, (it reaches the obj on the heap)
+	                            // following AL chain
 	            "stm","ltm","ltm",// duplicate top of the stack (contains AR of declaration)
 	            "lw",		  	// load the address of the obj in the dispatch table(why? l'obj pointer points to the address of the dispatch pointer)
 	            "push "+n.entry.offset, "add", // calculate the address of the method (label) in the dispatch table
@@ -372,49 +384,55 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	//////////////////////////////////////DECLARATIONS
 	
 	/**
-	 * Method for the generation of a function definition
+	 * Method for the generation of a function definition.
+	 * It is responsible for the termination of the AR of the function 
+	 * (which had been partially build from with the visit of the callNode)
 	 */
 	@Override
-	public String visitNode(FunNode n) {//HO: modified for functional type management 
+	public String visitNode(FunNode n) {//HO: modified for functional type management: now function can be passed as argument of the function 
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
-			declCode = nlJoin(declCode,visit(dec));
-			popDecl = nlJoin(popDecl,"pop");
-			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {// functional declarations occupy double space 
-				popDecl = nlJoin(popDecl,"pop");					// therefore an additional pop must be added
+			declCode = nlJoin(declCode,visit(dec));					//	generate code for the declaration: each of them allocate the result of the initialization expression if it is a var, or the address of the declared fnct (if it is a fnct)
+			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {//	declarations must be removed from the stack at the end, however functional declarations occupy double space in memory,
+				popDecl = nlJoin(popDecl,"pop", "pop");				// therefore I need to use two pop for each of them 
+			}else {
+				popDecl = nlJoin(popDecl,"pop");
+			}
+		}
+		for (int i=0;i<n.parlist.size();i++) {			// parameters have already been allocated by the caller, therefore here they just have to be removed
+			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) {
+				popParl = nlJoin(popParl,"pop", "pop");	// functional declarations occupy double space, therefore an additional pop must be added		
+			}else { 	
+				popParl = nlJoin(popParl,"pop"); 
 			}																		
 		}
-		for (int i=0;i<n.parlist.size();i++) {
-			popParl = nlJoin(popParl,"pop");
-			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	// functional declarations occupy double space 
-				popParl = nlJoin(popParl,"pop");						// therefore an additional pop must be added
-			}																		
-		}
-		String funl = freshFunLabel();
+		String funl = freshFunLabel();//generate a new label for the function address and set the appropriate field in the node
 		putCode(
 			nlJoin(
 				funl+":",
-				"cfp", 			// set $fp to $sp value
+				"cfp", 			// set $fp to $sp value; it should be the AL; it must be set as soon as we can because inside declCode variable could be initialized with variables that have jest been declared (the system must look for them in this AR)
 				"lra", 			// load $ra value
 				declCode, 		// generate code for local declarations (they use the new $fp!!!)
 				visit(n.exp), 	// generate code for function body expression
 				"stm", 			// set $tm to popped value (function result)
+				//it begins to destroy the AR
 				popDecl, 		// remove local declarations from stack
-				"sra", 			// set $ra to popped value
-				"pop", 			// remove Access Link from stack
-				popParl, 		// remove parameters from stack
-				"sfp", 			// set $fp to popped value (Control Link)
+				"sra", 			// set $ra to popped value: store the return address, it will be used to come back to the caller
+				"pop", 			// remove AL from stack (last thing allocated by the caller)
+				popParl, 		// remove parameters from stack (allocated by the caller before the call)
+				"sfp", 			// set $fp to popped value (CL: it was need to reset the FP to the caller frame to make it able to continue its execution)
 				"ltm", 			// load $tm value (function result)
-				"lra", 			// load $ra value
-				"js"  			// jump to to popped address
+				"lra", 			// load $ra value (return address)
+				"js"  			// jump to to popped address (caller frame)
 			)
 		);
 		return nlJoin("lfp", "push "+funl);		
 	}
 
 	/**
-	 *  Method for the generation of a variable (evaluate expression)
+	 *  Method for the generation of a variable (evaluate expression).
+	 *  It is purpose is to allocate on the stack the result of the variable initialization (its value).
 	 */
 	@Override
 	public String visitNode(VarNode n) {
@@ -423,26 +441,22 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	}
 	
 	/** 
-	 * Method for the generation of a method definition
+	 * Method for the generation of a method definition.
 	 */
 	@Override
-	public String visitNode(MethodNode n) {// NB parameters push is done by call/class-call node
+	public String visitNode(MethodNode n) {//NB Methods cannot have funcitonal types					
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
-			declCode = nlJoin(declCode,visit(dec));
-			popDecl = nlJoin(popDecl,"pop");	// NB i metodi non possono avere dichairazioni funzionali
-			
+			declCode = nlJoin(declCode,visit(dec));					//	generate code for the declaration
+			popDecl = nlJoin(popDecl,"pop");
 		}
-		for (int i=0;i<n.parlist.size();i++)  {
-			popParl = nlJoin(popParl,"pop");
-			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) { 	//dichiarazioni funzionali hanno offset doppio 
-				popParl = nlJoin(popParl,"pop");						//quindi devo aggiungere una pop
-			}	
+	for (int i=0;i<n.parlist.size();i++) {							// parameters have already been allocated by the caller, therefore here they just have to be removed
+			popParl = nlJoin(popParl,"pop"); 																		
 		}
-		n.label = freshFunLabel();//genero un etichetta per il suo indirizzo e la metto nel campo label
+		n.label = freshFunLabel();//generate a new label for the function address and set the appropriate field in the node
 		putCode(
-			nlJoin(					//genero il codice del metodo e lo metto in putcode
+			nlJoin(				//generate the code for the method and put it in putcode
 				n.label+":",
 				"cfp", 			// set $fp to $sp value
 				"lra", 			// load $ra value
@@ -459,7 +473,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				"js"  			// jump to to popped address
 			)
 		);
-		return "";	//return null
+		return "";				//return null
 	}
 	
 	/** 
