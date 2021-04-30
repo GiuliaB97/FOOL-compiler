@@ -315,7 +315,13 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
 	/** 
 	 * Method for the generation of a call of a function or a method inside a class.
-	 * It strats the construction of the AR of the function that will be terminated 
+	 * the main issues when dealing with functions/methods are :
+	 * - calling (the callee) and returning (to its own code)--> problem a callee can be called from multiple callers [caller]
+	 * -passing arguments (to the callee) [caller]
+	 * ---------------------------------------
+	 * - storing local variables [callee]
+	 * - returning a value [calle]
+	 * It starts the construction of the AR of the function that will be terminated 
 	 * with the visit of the FunNode, or the MethodNode 
 	 */
 	@Override
@@ -323,30 +329,31 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.id);
 		String argCode = null, getAR = null;
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));// it creates code for parameter expressions in reversed order
-		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");// it finds the AL (pointer to frame of function's declaration, reached as for variable id)
-		if(n.entry.type instanceof MethodTypeNode) {//OO: chiamata di un metodo locale cioè dall'interno di un altro metodo di un oggetto
+		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");// it finds the AL (ptr to frame of function's declaration)
+		if(n.entry.type instanceof MethodTypeNode) {//OO: call of a local method (whithin another method of the object)
 			return nlJoin(
 				"lfp", 			// push CL (pointer to caller's frame) used to ascend to declaration AR: it is needed to retrieve the parameters
 				argCode, 		// generate code for argument expressions in reversed order (from N to 1)
-				"lfp", getAR,   // it reaches address of the frame containing the ID declaration, (it reaches the obj on the heap)
-	                            // following AL chain
+				"lfp", getAR,   // it reaches address of the frame containing the ID declaration, (it reaches the obj on the heap), by following the static chain (of AL)
 	            "stm","ltm","ltm",// duplicate top of the stack (contains AR of declaration)
-	            "lw",		  	// load the address of the obj in the dispatch table(why? l'obj pointer points to the address of the dispatch pointer)
+	            "lw",		  	// load the address of the obj in the dispatch table (why? l'obj pointer points to the address of the dispatch pointer)
 	            "push "+n.entry.offset, "add", // calculate the address of the method (label) in the dispatch table
 	            "lw", 			// get value (label(=address) of method's subroutine);
-	            "js" 			// jump to popped address[ of the subroutine] (saving address of subsequent instruction in $ra)			);
+	            "js" 			// jump to popped address[of the subroutine] (saving address of subsequent instruction in $ra)
 	            );
 		} else {
 			return nlJoin(
-				"lfp", 		  // load Control Link (pointer to frame of function "id" caller)
+				"lfp", 		  // load CL (ptr to frame of function "id" caller)
 				argCode, 	  // generate code for argument expressions in reversed order
-				"lfp", getAR, // retrieve address of frame containing "id" declaration
-	                          // by following the static chain (of Access Links)
-	            "stm", 		  // set $tm to popped value (lo devo usare 2 volte)
-	            "ltm", "push "+n.entry.offset, "add", "lw", 	//carico Access Link - andandolo a prendere nello stack in posizione precedente all'indirizzo della funzione
-	            "ltm", "push "+(n.entry.offset-1), "add", "lw", //carico indirizzo funzione
-	            "js"  		  // jump to popped address[ of the subroutine] (saving address of subsequent instruction in $ra)
-			);
+				"push", getAR, // retrieve address of frame containing "id" declaration, by following the static chain (of AL)
+				"add",							// get function's declaration-AR's address
+				"stm", "ltm",					// save top of stack in tm register
+				"lw",							// get value (AR address of function's declaration)
+				"ltm",							// put AR address again on stack
+				"push 1",						// label address is saved after the AR address in the stack
+				"sub",							// get function's label address
+				"lw",							// get value (label of function's subroutine)
+				"js"	);
 		}
 	}
 	
@@ -483,7 +490,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	public String visitNode(ClassNode n) {
 		if (print) printNode(n,n.id);
 		if(n.superID!=null) {
-			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // devo copiare tutta la dispatch table della classe da cui estendo ; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 (a offset -1 credo ci sia l'indirizzo della funzione)	di dispatchTables
+			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // The whole dispatch table of the superclass must be copied; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 (a offset -1 credo ci sia l'indirizzo della funzione)	di dispatchTables
 		} else {			
 			dispatchTables.add(new ArrayList<>());
 		}
