@@ -58,7 +58,7 @@ public class AST {
 	}
 
 	/**
-	 * Class that represents an identifier in the AST
+	 * Class that represents an identifier in the AST.
 	 */
 	public static class IdNode extends Node {
 		final String id;
@@ -319,7 +319,6 @@ public class AST {
 		public <S,E extends Exception> S accept(BaseASTVisitor<S,E> visitor) throws E {return visitor.visitNode(this);}
 	}
 	
-	
 	//////////////////////////////////////DECLARATIONS
 	/**
 	 * Class that represents the declaration of a function
@@ -414,7 +413,7 @@ public class AST {
 	}
 	
 	/**
-	 *  Class that represents the declaration of a class
+	 *  Class that represents the declaration of a class.
 	 *
 	 * @author giuliabrugnatti
 	 *
@@ -502,7 +501,7 @@ public class AST {
 	 *
 	 */
 	public static class MethodTypeNode extends TypeNode {// OO
-		final ArrowTypeNode fun;								//richaimato dal TypeCheckVisitor; al momento della visita
+		final ArrowTypeNode fun;								//it is called by the TypeCheckVisitor when it visit the node
 		MethodTypeNode(List<TypeNode> parTypelist, TypeNode r ) {
 			fun = new ArrowTypeNode(parTypelist, r);
 		}
