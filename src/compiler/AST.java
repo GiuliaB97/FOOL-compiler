@@ -481,7 +481,8 @@ public class AST {
 	}
 	
 	/**
-	 *  Class that represents a functional-type in the AST
+	 *  Class that represents a functional-type in the AST.
+	 *  (i.e. function type)
 	 */
 	public static class ArrowTypeNode extends TypeNode {
 		final List<TypeNode> parlist;

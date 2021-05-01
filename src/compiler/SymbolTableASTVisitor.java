@@ -7,7 +7,8 @@ import compiler.exc.*;
 import compiler.lib.*;
 /**
  * The aim of the class is to enrich the tree; 
- * It is generated at compile time and it matches declarations with occurences.
+ * It is generated at compile time and it matches declarations with their occurrences, 
+ * checking if they are multiple declared, not declared etc.
  * The class contain a list of tables organized, whom organization depends on the scope:
  * global environment is at nesting level 0, 
  * the map and the nesting level variable are always updated 
@@ -26,88 +27,63 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 								parte da -2 e lo decommento ogni volta che incontro una nuova dichiarazione (di classe) 
 								*/
 	int stErrors=0;
-/////////////////////////////////////
-	private Map<String, Map<String,STentry>> classTable = new HashMap<>();
-	private Set<String> hs;
-//////////////////////////////////////
+
+	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO
+	private Set<String> hs;														//OO O: 
+
 	SymbolTableASTVisitor() {}
 	SymbolTableASTVisitor(boolean debug) {super(debug);} // enables print for debugging
-	/* stLookup
-	 * Overview:
-	 * 		metodo che data l'id della var la va a cercare nella symboltable 
-	 * 		e ritorna la pallina se la trova e null altrimenti
-	 * A. continuo la ricerca fino alla tabella finchè 
-	 * 		non trovo la dichiarazione della var che sto cercando
-	 * B. mi da inizialmente la tabella a nestinglevel e 
-	 * 		cerco di farmi dare la var che sto cercando
-	 * C. se quando esco entry è ancora null allora 
-	 * 		non ha trovato la pallina al contrario l'ha trovata
+
+	/**
+	 * Method that look for the entry corresponding at the id that takes as argument.
+	 * It starts its search at the current nesting level and go back until it found the entry it is looking for, 
+	 * or it reaches the global environment (level = 0)
+	 * @param variable id
+	 * @return entry
 	 */
 	private STentry stLookup(String id) {
-		int j= this.nestingLevel; 					//parto dal nesting level in cui sono 
+		int j= this.nestingLevel; 					
 		STentry entry  =null;
-		while (j>=0 && entry==null) {				/*A */
-			entry=this.symTable.get(j--).get(id); 	/*B */
+		while (j>=0 && entry==null) {				
+			entry=this.symTable.get(j--).get(id); 	
 		}
-		return entry;								/*C*/
+		return entry;								
 	}
 	
-	/* la visita torna void perchè fa solo visite se riesce ad associare id 
-	 * ad uso allora attacca la pallina all'albero
-	 */
-
-	/*visitNode
-	 * Overview:
-	 * Se sono nel corpo principale del programma
-	 * (questa è la radice quando ho un LET IN nel prog body)
-	 * Cosa faccio in questo caso?
-	 * COsa faccio con le dichairazioni che vedo come figli?
-	 * QUi in pratica stiamo entrando nello scope dell'ambiente globale, 
-	 * la variabile nesting level parte da 0 quindi va già bene 
-	 * ma devo creare la tabella per l'ambiente globale
-	 * 
-	 * A. tabella che conterrà le dichiarazioni dell'ambiente globale
-	 * B.aggiungo la tabella alla mia symbol table
-	 * C.visito le dichiarazioni contenute nella let in
-	 * D.visito il corpo che userà le dichiarazioni
-	 * E.ide ala hashmap cresce quando entro in scope e 
-	 * 	decresce quando esco quando finisce il programma posso buttare via tutto 
-	 * (rimuovo quella dell'abiente globale perchè le altre teoricamente le ho già rimosse tutte)
+	/**
+	 * Method that handles the root of a let-in program.
+	 * It is responsible for the creation of the table for the global environment
+	 * (it will contain the declarations for the nesting level =0).
+	 * Next it visits all its declaration and its body expression, 
+	 * finally it removes the table it had created because when all uses have been processed to link 
+	 * each ID node in the abstract-syntax tree with the corresponding symbol-table entry,
+	 * then the symbol table itself is no longer needed.
+	 * NB that should be the last table present as each block is responsible for the deletion of its own table.
 	 * 
 	 */
 	@Override
 	public Void visitNode(ProgLetInNode n) {
 		if (print) printNode(n);
-		Map<String, STentry>hm= new HashMap<>();	//A
-		symTable.add(hm); 							//B
-		for (Node dec : n.declist) visit(dec);		//C													
-		visit(n.exp);								//D
-		symTable.remove(0);							//E
-		return null;
+		Map<String, STentry>hm= new HashMap<>();	
+		symTable.add(hm); 							
+		for (Node dec : n.declist) visit(dec);															
+		visit(n.exp);								
+		symTable.remove(0);							
+		return null;		//the visit returns 'void' because the aim is to match declaration with use, there is no need to return something
 	}
-
+	
+	/**
+	 * Method responsible of the management of a program without declaration.
+	 * If a program has no declaration, then it will not use the symbol table. 
+	 */
 	@Override
-	public Void visitNode(ProgNode n) {//if I have a program with no declaration I have to do nothing.
+	public Void visitNode(ProgNode n) {
 		if (print) printNode(n);
 		visit(n.exp);
 		return null;
 	}
 	
-	/* visitNode
-	 * Overview:
-	 * 	Inserisco nel fronte della tabella la dichiarazione della funzione
-	 * 	In questo caso andiamo come prima ad inserire il nome della funzione 
-	 * 	(dopo averne incontrato la dichiarazione)n nel fronte della lista 
-	 * A. mi da la tabella dello scope corrente					Map<String, STentry>hm=this.symTable.get(nestingLevel); //A
-	 * B. Creo un anuova pallina								STentry entry = new STentry(nestingLevel);				//B
-	 * C. inserimento id nella symboltable, ma devo controllare se c'era già
-	 *		 (in Java il metodo put controlla se la chiave c'era già se put torna null 
-	 *		 la chiave non esisteva se c'era già ritorna il valore della vecchia chiave
-	 *		 NB ora n.id= nome funzione							if(hm.put(n.id, entry)!=null) {							//C
-	 * D. ora devo entrare in un nuovo scope; incremento nesting level + creo una nuova 
-	 * 		hashmap per il nuovo scope
-	 * E. tabella che conterrà le dichiarazioni dell'ambiente globaleMap<String, STentry>nhm= new HashMap<>();	// E
-	 * F. aggiungo la tabella alla mia symbol table				symTable.add(nhm); 							// F
+	/*
 	 * G. visito le dichiarazioni di variabili che possono essere variabili 
 	 * 		o funzioni											for (Node dec : n.declist) visit(dec);		// G
 	 * H. visito il corpo della mia funzione che può usare cose locali o cose in nesting 
@@ -115,57 +91,62 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	 * I. prima di terminare devo uscire dallo scope			this.symTable.remove(nestingLevel--);		// I
 		
 	 */
+	/**
+	 * Method responsible for the management of the declaration of a function.
+	 * Since, all declarations must be at nesting level 0, it does not have to create one,
+	 * it get it and create a new entry for its declaration (its id) and try to insert it in the table.
+	 * Next, it creates a table for its parameters inserting them in the new table.
+	 * Finally it launches the visit on its declaration and body expression.
+	 * 
+	 * NB since the type of the function is not set in the constructor, it musts be set here.
+	 */
 	@Override
 	public Void visitNode(FunNode n) {
 		if (print) printNode(n);
 		Map<String, STentry> hm = symTable.get(nestingLevel);
 		List<TypeNode> parTypes = new ArrayList<>();  
 		for (ParNode par : n.parlist) parTypes.add(par.getType()); 
-		n.setType(new ArrowTypeNode(parTypes, n.retType));												//new line
+		n.setType(new ArrowTypeNode(parTypes, n.retType));												//function type is not set in the constructur (AST)
 		
 		STentry entry = new STentry(nestingLevel, 
 				new ArrowTypeNode(parTypes,n.retType),decOffset--);
-		decOffset--;																					//new line
+		decOffset--;																					//it updates the offset, so the next operation will have the correct value
 		
 		//inserimento di ID nella symtable
-		if (hm.put(n.id, entry) != null) {
-			System.out.println("Fun id " + n.id + " at line "+ n.getLine() +" already declared");
+		if (hm.put(n.id, entry) != null) {	//it checks if the entry is already present in the table; NB 'put' returns the old value associated to the key, if that latter is already present
+			System.out.println("Fun id " + n.id + " at line "+ n.getLine() +" already declared");		//n.id: function name
 			stErrors++;
 		} 
+		
 		//creare una nuova hashmap per la symTable
-		nestingLevel++;
-		Map<String, STentry> hmn = new HashMap<>();
+		nestingLevel++;																					//it is entering in a new scope so it needs to increment the nesting level
+		Map<String, STentry> hmn = new HashMap<>();														//And create a new table
 		symTable.add(hmn);
-		int prevNLDecOffset=decOffset; // stores counter for offset of declarations at previous nesting level 
+		int prevNLDecOffset=decOffset; 																	// stores counter for offset of declarations at previous nesting level 
 		decOffset=-2;
 		
 		int parOffset=1;
-		for (ParNode par : n.parlist) {
-			if(par.getType() instanceof ArrowTypeNode) parOffset++;
-			if (hmn.put(par.id, new STentry(nestingLevel,par.getType(),parOffset++)) != null) {
+		for (ParNode par : n.parlist) {																	//	it visits the function parameters 
+			if(par.getType() instanceof ArrowTypeNode) parOffset++;										//	functional types occupy double space
+			if (hmn.put(par.id, new STentry(nestingLevel,par.getType(),parOffset++)) != null) {			// Again checks for multiple declarations
 				System.out.println("Par id " + par.id + " at line "+ n.getLine() +" already declared");
 				stErrors++;
 			}
 		}
-		for (Node dec : n.declist) visit(dec);
+		for (Node dec : n.declist) visit(dec);															//next it visits its declarations
 		visit(n.exp);
 		//rimuovere la hashmap corrente poiche' esco dallo scope               
-		symTable.remove(nestingLevel--);
-		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level 
+		symTable.remove(nestingLevel--);																//when it finishes it throws away the table becuase it is no loger needed
+		decOffset=prevNLDecOffset; 																		//and it restores counter for offset of declarations at previous nesting level 
 		return null;
 	}
 	
-	/*
-	 * Inserisco nel fronte della tabella la dichiarazione della variabile
-	 * A. vado ad inserire nella tabella che sta al fronte della lista l'id della variabile , 
-	 * 		ma devo vedere se c'è già questo lavoro va fatto prima o dopo la visita a exp? Prima.
-	 * B. exp è il copoche userà le dichiarazioni 
-	 * C. mi da la tabella dello scope corrente
-	 * D. Creo un anuova pallina
-	 * E. inserimento id nella symboltable, ma devo controllare se c'era già 
-	 * 		(in Java il metodo put controlla se la chiave c'era già 
-	 * 			se put torna null la chiave non esisteva se c'era già ritorna il valore della vecchia chiave
-	 */	
+	
+	/**
+	 * Method that handles a variable declaration.
+	 * EIther if it is a global variable or, a variable in a function (/method), the table for the scope in which it is declared 
+	 * must already exist, so it gets it, create a new entry for itself and try to insert is in the table
+	 */
 	@Override
 	public Void visitNode(VarNode n) {
 		if (print) printNode(n);
@@ -174,7 +155,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		STentry entry = new STentry(nestingLevel,n.getType(),decOffset--);
 		if(n.getType() instanceof ArrowTypeNode) decOffset--;
 		//inserimento di ID nella symtable
-		if (hm.put(n.id, entry) != null) {//E
+		if (hm.put(n.id, entry) != null) {//it checks for multiple declaration
 			System.out.println("Var id " + n.id + " at line "+ n.getLine() +" already declared");
 			stErrors++;
 		}
@@ -187,7 +168,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		visit(n.exp);
 		return null;
 	}
-	
+	/**
+	 * Method that handle an if-then-else expression.
+	 * It just launches a visit on the three nodes expressions.
+	 */
 	@Override
 	public Void visitNode(IfNode n) {
 		if (print) printNode(n);
@@ -197,6 +181,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
+	/**
+	 * Method that handle an equal expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
 	public Void visitNode(EqualNode n) {
 		if (print) printNode(n);
@@ -205,6 +193,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
+	/**
+	 * Method that handle an times expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */	
 	@Override
 	public Void visitNode(TimesNode n) {
 		if (print) printNode(n);
@@ -213,6 +205,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
+	/**
+	 * Method that handle an plus expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
 	public Void visitNode(PlusNode n) {
 		if (print) printNode(n);
@@ -269,56 +265,80 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 
 	//////////////////////////////////////////////////////////////////////////////
-	
+	/**
+	 * Method that handle a greater-equal expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(GreaterEqualNode n) {
+	public Void visitNode(GreaterEqualNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
 		return null;
 	}
 	
+	/**
+	 * Method that handle a less-equal expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(LessEqualNode n) {
+	public Void visitNode(LessEqualNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
 		return null;
 	}
 	
+	/**
+	 * Method that handle a not expression.
+	 * It just launches a visit on the node expression.
+	 */
 	@Override
-	public Void visitNode(NotNode n) {
+	public Void visitNode(NotNode n) {//LE
 		if (print) printNode(n);
 		visit(n.val);
 		return null;
 	}
-
+	/**
+	 * Method that handle a division expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(DivNode n) {
+	public Void visitNode(DivNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
 		return null;
 	}
 	
+	/**
+	 * Method that handle a minus expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(MinusNode n) {
+	public Void visitNode(MinusNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
 		return null;
 	}
-	
+	/**
+	 * Method that handle an or expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(OrNode n) {
+	public Void visitNode(OrNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
 		return null;
 	}
-	
+	/**
+	 * Method that handle an and expression.
+	 * It just launches a visit on the two nodes expressions.
+	 */
 	@Override
-	public Void visitNode(AndNode n) {
+	public Void visitNode(AndNode n) {//LE
 		if (print) printNode(n);
 		visit(n.left);
 		visit(n.right);
