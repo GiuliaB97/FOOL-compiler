@@ -301,7 +301,7 @@ public class AST {
 	}
 	
 	/**
-	 *  Class that represents an object instantiation
+	 *  Class that represents an object instantiation.
 	 * 
 	 * @author giuliabrugnatti
 	 */

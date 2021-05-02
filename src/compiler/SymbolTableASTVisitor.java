@@ -15,7 +15,6 @@ import compiler.lib.*;
  * (incrementing the nesting level when you enter in a new scope and decremented it when you go out)
  * therefore they point to the level in which the program is currently.
  *  
- *  
  * @author giuliabrugnatti
  *
  */
@@ -29,7 +28,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	int stErrors=0;
 
 	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO
-	private Set<String> hs;														//OO O: 
+	//private Set<String> hs;														//OO O: 
 
 	SymbolTableASTVisitor() {}
 	SymbolTableASTVisitor(boolean debug) {super(debug);} // enables print for debugging
@@ -217,11 +216,17 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
+	/**
+	 * Method that handles the call of a function, or a method one if called by another method of the same class.
+	 * It looks for the entry for the node that should have been previously declared
+	 * and if it so it uses the entry in the table to update its fields.
+	 * Next, it launches a visit on its arguments.
+	 */
 	@Override
 	public Void visitNode(CallNode n) {
 		if (print) printNode(n);
 		STentry entry = stLookup(n.id);
-		if (entry == null) {
+		if (entry == null) {																	//if the function/method is not declared
 			System.out.println("Fun id " + n.id + " at line "+ n.getLine() + " not declared");
 			stErrors++;
 		} else {
@@ -231,7 +236,11 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		for (Node arg : n.arglist) visit(arg);
 		return null;
 	}
-
+	/**
+	 * Method that handles the call of a identifier.
+	 * It looks for the entry for the node that should have been previously declared
+	 * and if it so it uses the entry in the table to update its fields.
+	 */
 	@Override
 	public Void visitNode(IdNode n) {
 		if (print) printNode(n);
@@ -346,81 +355,92 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Method that handles the declaration of a class.
+	 * Firstly, it crates a new table (Virtual Table) which will contains the declarations of the class;
+	 * if the class extends another class the table should contain also the entries of the methods and 
+	 * the fields of the superclass (the ones where that the new class has not overridden).
+	 * Furthermore, the method need a new variable to manage the optimization task, 
+	 * that latter is used to check if methods and fields of the super class have been overridden in a wrong way; 
+	 * that is to say it is considered not correct to override fields and methods inside the same class.
+	 *  
+	 *  
+	 *  Finally, it visits all its declaration, remove its table from the symbol table and reset the offset.
+	 */
 	@Override
-	public Void visitNode(ClassNode n) {//l'aggiornamento del classTypeNode ora lo faccio direttamente qui; 
+	public Void visitNode(ClassNode n) { //OO (O)
+		//l'aggiornamento del classTypeNode ora lo faccio direttamente qui; 
 										//NB decorazione nodi AST ID2 (stentry della classe id2 in campo superentry), 
 										//id2 deve essere in CT e STentry presa direttamente da livello 0 della ST
 		if (print) printNode(n);
-		Map<String, STentry> virtualTable;//Uso: quando visito lo scope interno di una classe la ST del livello corrispondente 
-										//deve includere anche le Stentry per metodi e campi ereditati su cui non è stato fatto overriding
-																		
-		this.hs = new HashSet<>();		// Versione OO con ottimizzazioni: oggetto creato vuoto all'entrata della classe
-										// serve per controllare l'erronea ridefinizione di campi e metodi all'interno della stessa classe
-		if(nestingLevel!=0) {//Per com'è fatto il nostro layout la dichiarazione della classe deve trovarsi all'inizio, se non è così devo lanciare un errore
+		Map<String, STentry> virtualTable;
+		
+		Set<String> hs = new HashSet<>();													// OO O: set that checks for methods and fields overridden in a wrong way
+		
+		if(nestingLevel!=0) {																// definitions must be at nesting level = 0, if not -> error 
 			System.out.println("Class id " + n.id + " at line "+ n.getLine() +" not declared in global environment");
 			stErrors++;
 		}
-		
 		//visito la classe dichiarata
-		Map<String, STentry> hm = symTable.get(nestingLevel);			//Devo aggiungere a nesting level=0, il nome della classe mappato a una nuova Stentry
+		Map<String, STentry> hm = symTable.get(nestingLevel);								//it retrieves the table of the level 0 (created by prog-let-in	
 		//inizializzazione
 		STentry entry = null;								
-		n.setType(new ClassTypeNode(new ArrayList<>(), new ArrayList<>()));
+		n.setType(new ClassTypeNode(new ArrayList<>(), new ArrayList<>()));					//initialize the type field with an empty classTypeNode
 		
-		if(n.superID==null) {//se non eredito devo il tipo è un nuovo oggetto con una lista in allFields e allMethod vuota
-			entry = new STentry(nestingLevel, 												//nestingLevel==0				 
-								new ClassTypeNode(new ArrayList<>(), new ArrayList<>()),	// l'oggetto di tipo  classNode deve essere contenuto nella STentry			
-								decOffset--);												//lo stack cresce verso il basso a ogni dichiarazione devo decrementare
-		}else {				//se eredito il tipo viene creato copiando il tipo della classe da cui si eredita (copio tutto il contenuto)				
-			n.setSuperEntry(hm.get(n.superID));
-			ClassTypeNode subclass = (ClassTypeNode)n.superEntry.type;		//se eredita, il tipo della classe viene creato copiando quello ereditato
+		if(n.superID==null) {																//if the class does not extend from some other class allFields and allMethod lists must be empty
+			entry = new STentry(nestingLevel, new ClassTypeNode(new ArrayList<>(), new ArrayList<>()),	decOffset--);
+		}else {																				//if the class extends the new entry cannot be an empty classTypeNode 
+			n.setSuperEntry(hm.get(n.superID));												//however the type must be the one of the superclass, furthermore it must also copy its fields and the methods				
+			ClassTypeNode subclass = (ClassTypeNode)n.superEntry.type;		
 			((ClassTypeNode)n.getType()).allFields.forEach(f-> subclass.allFields.add(f));
 			((ClassTypeNode)n.getType()).allMethods.forEach(m-> subclass.allMethods.add(m));
 			entry = new STentry(nestingLevel, new ClassTypeNode(new ArrayList<>(subclass.allFields), new ArrayList<>(subclass.allMethods)),decOffset--);
 		}
-		//inserimento di ID nella symtable
-		if (hm.put(n.id, entry) != null) {
+
+		if (hm.put(n.id, entry) != null) {													//it add the new entry in the table, if its name is already present -> error
 			System.out.println("Class id " + n.id + " at line "+ n.getLine() +" already declared");
 			stErrors++;
 		}
 																		
-	// Nella CT aggiungo il nome della classe mappato ad una nuova vitual table (A)
-		if(n.superID == null) {											// Se non eredito la VT è vuota
+	// It must add the class id(mapped to a new VT) in the CT (A)
+		if(n.superID == null) {											// If the class does not extends another class the new VT is empty
 			virtualTable = new HashMap<>();
-		} else {														// se eredito allora, devo copiare il contenuto (tutto) della VT da cui eredito;
-			virtualTable = new HashMap<>(classTable.get(n.superID));	// (uso l'ID della super classe per farmi restituire la mappa corrispondente	
+		} else {														// otherwise it must copy the VT of the superclass
+			virtualTable = new HashMap<>(classTable.get(n.superID));	// (it uses the ID of the super classe to get its map	
 		}
-		classTable.put(n.id, virtualTable); 							// (A) 
-		nestingLevel++;													// All'entrata dentro la dichiarazione della classe,creo un nuovo livello per la ST 
-		symTable.add(virtualTable);										// vien posto essere la nuova VT creata
+		classTable.put(n.id, virtualTable); 							//  (A)
+		nestingLevel++;													// update the nesting level becuase it is about to enter inside the class declaration 
+		symTable.add(virtualTable);										
 		
 		int prevNLDecOffset=decOffset; 									// stores counter for offset of declarations at previous nesting level 
 		
 		int fieldOffset;
-		if(n.superID==null) {
-			decOffset=0;
-			fieldOffset=-1;
-		}else {
-			decOffset=((ClassTypeNode)entry.type).allMethods.size();
-			fieldOffset=-((ClassTypeNode)entry.type).allFields.size()-1;
+		if(n.superID==null) {											//If the class does not extends
+			decOffset=0;													//methods starts at offset 0
+			fieldOffset=-1;													//fields starts at offset -1
+		}else {															//otherwise
+			decOffset=((ClassTypeNode)entry.type).allMethods.size();		//the new methods starts after the last method inherited from the superclass	
+			fieldOffset=-((ClassTypeNode)entry.type).allFields.size()-1;	//fields starts after the last field of the inherited
 		}
-		//VT e obj ClassTYpeNode sono aggiornati tutte le volte che si incontrano: campi e metodi
-		// Versione OO con ottimizzazioni: non bisogna considerare più overriding la ridefinizione di campi e metodi all'interno della stessa classe
-		for (FieldNode field : n.fields) {		//qui non posso usare una lambda perchè: fieldOffset non è final (e non posso metterlo tale) 					
-			if(!hs.contains(field.id)) {		//mentre scorro le dichiarazioni dei campi; li aggiungo al hs (se non ci sono già)																	
+		//VT e obj ClassTYpeNode are updated each time a method or a field is met
+		
+		for (FieldNode field : n.fields) {		//I cannot use a lambda to handle the loop because fieldoffset is not final 					
+			if(!hs.contains(field.id)) {																		
 				hs.add(field.id);
-			} else {													// se un nome di campo è già presente [OOo] non lo devo considerare overriding ma errore
+			} else {							// [OOo]: if a field has already been added to the set it should consider it an error
 				System.out.println("Field id " + field.id + " already declared within the class "+n.id);
 				stErrors++;
 			}
-			if(virtualTable.containsKey(field.id)) {
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////											
+			if(virtualTable.containsKey(field.id)) {//Methods cannot be overridden with fields
 				if(virtualTable.get(field.id).type instanceof MethodTypeNode) {
 					System.out.println("Cannot override method id " + field.id + " with a field at line "+ n.getLine());
 					stErrors++;
-				} else {												//sostituisco nuova STentry alla vecchia preservando l’offset che era nella vecchia STentry
+				} else {							//substitue the new STentry to the old one (offset must remain the same of the old STentry)
 					field.offset = virtualTable.get(field.id).offset;
 					virtualTable.put(field.id, new STentry(nestingLevel,field.getType(),field.offset));
-					((ClassTypeNode)hm.get(n.id).type).					//per i campi aggiorno arrayFields settando la posizione a -offset-1 al tipo(nostro layout primo campo è -1)
+					((ClassTypeNode)hm.get(n.id).type).	//per i campi aggiorno arrayFields settando la posizione a -offset-1 al tipo(nostro layout primo campo è -1)
 									allFields.set(-field.offset-1, field.getType());
 				}
 			} else {
@@ -492,12 +512,18 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level 
 		return null;
 	}
-
+	
+	/**
+	 * Method that handles a method call.
+	 * Firstly it retrieves, the entry of the method from the symbol table (it search for it at the current nesting level)
+	 * if it finds it, then it uses the entry to set the node's field.
+	 * Next, it uses the class table to search in the Virtual Table 
+	 */
 	@Override
 	public Void visitNode(ClassCallNode n) {
 		if (print) printNode(n);
 		STentry entry = stLookup(n.classID);
-		if (entry != null) {//searched in the same way of IdNode andCallNode
+		if (entry != null) { 
 			n.entry = entry;
 		} else {
 			System.out.println("Class id " + n.classID + " at line "+ n.getLine() + " not declared");
@@ -515,11 +541,18 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
+	/**
+	 * Methods that handles an object instantiation.
+	 * Firstly, it retrieves the id of the class from the classTable if 
+	 * it is not present then the program is trying to use a class that has not been declared.
+	 * Next, it get the entry of the class from the symbol table to set the nodes' fields.
+	 * Finally, it visit all the arguments.
+	 */
 	@Override
 	public Void visitNode(NewNode n) {
 		if (print) printNode(n);
-		if(classTable.containsKey(n.id)) {//ID must be in CT 
-			STentry entry = symTable.get(0).get(n.id);//and STentry took at level 0 of the ST
+		if(classTable.containsKey(n.id)) {
+			STentry entry = symTable.get(0).get(n.id); //and STentry took at level 0 of the ST
 			n.entry = entry;
 			n.nl = nestingLevel;
 		} else {
