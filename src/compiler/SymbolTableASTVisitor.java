@@ -27,7 +27,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 								*/
 	int stErrors=0;
 
-	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO
+	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO: it map each class identifier to its virtual table, its aim is to maintain the declarations of the fields and methods of the class, once the visitor finishes the visit of the declaration
 	//private Set<String> hs;														//OO O: 
 
 	SymbolTableASTVisitor() {}
@@ -82,14 +82,6 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
-	/*
-	 * G. visito le dichiarazioni di variabili che possono essere variabili 
-	 * 		o funzioni											for (Node dec : n.declist) visit(dec);		// G
-	 * H. visito il corpo della mia funzione che può usare cose locali o cose in nesting 
-	 * 		level inferiori (finoa d arrivare a zero)			visit(n.exp);								// H
-	 * I. prima di terminare devo uscire dallo scope			this.symTable.remove(nestingLevel--);		// I
-		
-	 */
 	/**
 	 * Method responsible for the management of the declaration of a function.
 	 * Since, all declarations must be at nesting level 0, it does not have to create one,
@@ -370,11 +362,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	 */
 	@Override
 	public Void visitNode(ClassNode n) { //OO (O)
-		//l'aggiornamento del classTypeNode ora lo faccio direttamente qui; 
-										//NB decorazione nodi AST ID2 (stentry della classe id2 in campo superentry), 
-										//id2 deve essere in CT e STentry presa direttamente da livello 0 della ST
 		if (print) printNode(n);
-		Map<String, STentry> virtualTable;
+		Map<String, STentry> virtualTable;													// OO: symboltable for the current level, it contains the declarations of the fields and methods of the class  (also the ones of the superclass not overridden)
 		
 		Set<String> hs = new HashSet<>();													// OO O: set that checks for methods and fields overridden in a wrong way
 		
@@ -425,7 +414,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		}
 		//VT e obj ClassTYpeNode are updated each time a method or a field is met
 		
-		for (FieldNode field : n.fields) {		//I cannot use a lambda to handle the loop because fieldoffset is not final 					
+		for (FieldNode field : n.fields) {		//I cannot use a lambda to handle the loop because fieldOffset is not final 					
 			if(!hs.contains(field.id)) {																		
 				hs.add(field.id);
 			} else {							// [OOo]: if a field has already been added to the set it should consider it an error
@@ -437,7 +426,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				if(virtualTable.get(field.id).type instanceof MethodTypeNode) {
 					System.out.println("Cannot override method id " + field.id + " with a field at line "+ n.getLine());
 					stErrors++;
-				} else {							//substitue the new STentry to the old one (offset must remain the same of the old STentry)
+				} else {							//the old STentry with the new one (offset must remain the same of the old STentry)
 					field.offset = virtualTable.get(field.id).offset;
 					virtualTable.put(field.id, new STentry(nestingLevel,field.getType(),field.offset));
 					((ClassTypeNode)hm.get(n.id).type).	//per i campi aggiorno arrayFields settando la posizione a -offset-1 al tipo(nostro layout primo campo è -1)

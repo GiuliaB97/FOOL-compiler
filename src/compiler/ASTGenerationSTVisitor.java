@@ -10,7 +10,13 @@ import compiler.AST.*;
 import compiler.FOOLParser.*;
 import compiler.lib.*;
 import static compiler.lib.FOOLlib.*;
-
+/**
+ * Class responsible for the generation of the AST from the ST created from ANTLR.
+ * It creates an abstract implementation of tree, where the useless chars of the program are not present.
+ * 
+ * @author giuliabrugnatti
+ *
+ */
 public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 	String indent;
@@ -122,18 +128,18 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 	/////////////////////////////////////////////////////////
 	@Override
-	public Node visitLetInProg(LetInProgContext c) {
+	public Node visitLetInProg(LetInProgContext c) {//OO
 		if (print) printVarAndProdName(c);
 		List<DecNode> declist = new ArrayList<>();
-		for (CldecContext cldec : c.cldec()) declist.add((DecNode) visit(cldec));//Estensione OO: se ci sono classi vengono dichiarate prima delle altre dichiarazioni
+		for (CldecContext cldec : c.cldec()) declist.add((DecNode) visit(cldec));// OO: cldec: class declaration
 		for (DecContext dec : c.dec()) declist.add((DecNode) visit(dec));
 		return new ProgLetInNode(declist, visit(c.exp()));
 	}
 
 	/////////////////////////////LANUGUAGE EXTENSION
-	//MERGE TIMES & DIV
+	
 	@Override
-	public Node visitTimesDiv(TimesDivContext c) {
+	public Node visitTimesDiv(TimesDivContext c) {//LE: merged times & div
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.TIMES() != null) {
@@ -145,9 +151,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		return n;		
 	}
-	//MERGE PLUS & MINUS
+	
 	@Override
-	public Node visitPlusMinus(PlusMinusContext c) {
+	public Node visitPlusMinus(PlusMinusContext c) {//LE: merged plus and minus
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.PLUS() != null) {
@@ -159,9 +165,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		return n;		
 	}
-	//&& & !! sono nuovi ma li tratto uguali a *, /, -, +
+	
 	@Override
-	public Node visitAndOr(AndOrContext c) {
+	public Node visitAndOr(AndOrContext c) {//LE: && & !! are new, but they are handled just as: *, /, -, +
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if(c.AND() != null) {
@@ -173,17 +179,17 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		return n;		
 	}
-	// ! unica expr da visitare
+	
 	@Override
-	public Node visitNot(NotContext c) {
+	public Node visitNot(NotContext c) {//LE
 		if (print) printVarAndProdName(c);
 		Node n = new NotNode(visit(c.exp()));
 		n.setLine(c.NOT().getSymbol().getLine());	
 		return n;		
 	}
-	//MERGE visito <=, >=, ==
+	
 	@Override
-	public Node visitComp(CompContext c) {
+	public Node visitComp(CompContext c) {//LE: merged <=, >=, ==
 		if (print) printVarAndProdName(c);	
 		Node n = null;
 		if(c.EQ() != null) {
@@ -200,13 +206,12 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		return n;		
 	}
 	/////////////////////////////////////////////////////
-	// cambia il primo parametro passato alla visit da type() a hotype()
 	@Override
-	public Node visitVardec(VardecContext c) {
+	public Node visitVardec(VardecContext c) {//OO
 		if (print) printVarAndProdName(c);
 		Node n = null;
 		if (c.ID()!=null) { //non-incomplete ST
-			n = new VarNode(c.ID().getText(), (TypeNode) visit(c.hotype()), visit(c.exp()));//Estensione HO: type cambiato in hoType()
+			n = new VarNode(c.ID().getText(), (TypeNode) visit(c.hotype()), visit(c.exp()));// HO: type -> hoType()
 			n.setLine(c.VAR().getSymbol().getLine());
 		}
 		return n;
@@ -217,7 +222,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		if (print) printVarAndProdName(c);
 		List<ParNode> parList = new ArrayList<>();
 		for (int i = 1; i < c.ID().size(); i++) { 
-			ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));// Estensione HO: ultima visita era su type (i) ed ora hotype(i-1)
+			ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));//HO: type (i) -> hotype(i-1)
 			p.setLine(c.ID(i).getSymbol().getLine());
 			parList.add(p);
 		}
@@ -230,26 +235,26 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		return n;
 	}
-
+	
+	/**
+	 * Method that handles a class declaration
+	 */
 	@Override
-	public Node visitCldec(CldecContext c) {//dichiarazione della classe
+	public Node visitCldec(CldecContext c) {//OO
 		if (print) printVarAndProdName(c);
 		List<FieldNode> fields = new ArrayList<>();
 		List<MethodNode> methods = new ArrayList<>();
 		String supertype = null;	
-		int offset=1;				//nel nostro layout i campi della classe nell'heap partono da offset-1 e arrivano a offset -n,
+		int offset=1;				//in the project layout class' fields are on allocated in the heap (from offset-1 to offset -n)
 
-		if(c.EXTENDS() != null) {// se la classe estende, gli ID dei fields partono dall'indice 2 anzichè dall'indice 1
+		if(c.EXTENDS() != null) {// if the class extends the ID of the fields starts from 2 instead of 1
 			supertype=null;
 			offset=2;
 		}
 		
 		//visito il campo c.type per vedere tutti i campi
-		for(int i=0; i < c.type().size(); i++) {
+		for(int i=0; i < c.type().size(); i++) {//
 			FieldNode f = new FieldNode(c.ID(i+offset).getText(), (TypeNode)visit(c.type(i)));	//mentre per l'id dei campi devo fare il controllo se la classe estende o meno per trovare l'indice giusto,i type dei fields partono sempre dall'indice 0		
-			if(supertype!=null) {
-				System.out.println("///////////////////////////////////////////posizione 1"+(c.ID(i).getText()));
-			}
 			f.setLine(c.ID(i).getSymbol().getLine());
 			fields.add(f);
 		}
