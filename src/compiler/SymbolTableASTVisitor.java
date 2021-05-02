@@ -28,8 +28,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	int stErrors=0;
 
 	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO: it map each class identifier to its virtual table, its aim is to maintain the declarations of the fields and methods of the class, once the visitor finishes the visit of the declaration
-	//private Set<String> hs;														//OO O: 
-
+	
 	SymbolTableASTVisitor() {}
 	SymbolTableASTVisitor(boolean debug) {super(debug);} // enables print for debugging
 
@@ -126,7 +125,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		}
 		for (Node dec : n.declist) visit(dec);															//next it visits its declarations
 		visit(n.exp);
-		//rimuovere la hashmap corrente poiche' esco dallo scope               
+		
 		symTable.remove(nestingLevel--);																//when it finishes it throws away the table becuase it is no loger needed
 		decOffset=prevNLDecOffset; 																		//and it restores counter for offset of declarations at previous nesting level 
 		return null;
@@ -265,7 +264,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 
-	//////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////// LANGUAGE EXTENSION
 	/**
 	 * Method that handle a greater-equal expression.
 	 * It just launches a visit on the two nodes expressions.
@@ -371,9 +370,9 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			System.out.println("Class id " + n.id + " at line "+ n.getLine() +" not declared in global environment");
 			stErrors++;
 		}
-		//visito la classe dichiarata
-		Map<String, STentry> hm = symTable.get(nestingLevel);								//it retrieves the table of the level 0 (created by prog-let-in	
-		//inizializzazione
+		
+		Map<String, STentry> hm = symTable.get(nestingLevel);								//it retrieves the table of the level 0 (created by prog-let-in)
+		
 		STentry entry = null;								
 		n.setType(new ClassTypeNode(new ArrayList<>(), new ArrayList<>()));					//initialize the type field with an empty classTypeNode
 		
@@ -392,7 +391,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			stErrors++;
 		}
 																		
-	// It must add the class id(mapped to a new VT) in the CT (A)
+		// It must add the class id(mapped to a new VT) in the CT (A)
 		if(n.superID == null) {											// If the class does not extends another class the new VT is empty
 			virtualTable = new HashMap<>();
 		} else {														// otherwise it must copy the VT of the superclass
@@ -421,12 +420,12 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				System.out.println("Field id " + field.id + " already declared within the class "+n.id);
 				stErrors++;
 			}
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////											
+											
 			if(virtualTable.containsKey(field.id)) {//Methods cannot be overridden with fields
 				if(virtualTable.get(field.id).type instanceof MethodTypeNode) {
 					System.out.println("Cannot override method id " + field.id + " with a field at line "+ n.getLine());
 					stErrors++;
-				} else {							//the old STentry with the new one (offset must remain the same of the old STentry)
+				} else {							//the old STentry is thrown away and a new one takes its place(offset must remain the same of the old STentry)
 					field.offset = virtualTable.get(field.id).offset;
 					virtualTable.put(field.id, new STentry(nestingLevel,field.getType(),field.offset));
 					((ClassTypeNode)hm.get(n.id).type).	//per i campi aggiorno arrayFields settando la posizione a -offset-1 al tipo(nostro layout primo campo è -1)
@@ -460,6 +459,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		
 	}
 	
+	/**
+	 * Method that handles the declaration of a method.
+	 * It get the table for its level, checks if its is is already present in the table:
+	 * - if it is present the method then the method is trying to override a method of the superclass, 
+	 * so it must create a new entry that will take the place of the method overridden (it should have the same offset).
+	 * - if it is not present then, this is a new method that must be mapped to a new entry.
+	 * Next, it does the checks on its arguments and executes a visit on them.
+	 */
 	@Override
 	public Void visitNode(MethodNode n) {
 		if (print) printNode(n);
@@ -467,20 +474,17 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		List<TypeNode> parTypes = new ArrayList<>();  
 		for (ParNode par : n.parlist) parTypes.add(par.getType()); 
 		
-		if(virtualTable.containsKey(n.id)) {
-			if(!(virtualTable.get(n.id).type instanceof MethodTypeNode)) {
+		if(virtualTable.containsKey(n.id)) {																	
+			if(!(virtualTable.get(n.id).type instanceof MethodTypeNode)) {//methods can be overriden only with other method
 				System.out.println("Cannot override method id " + n.id + " with a field at line "+ n.getLine());
 				stErrors++;
 			} else {
-				//sostituisco nuova STentry alla vecchia preservando l’offset che era nella vecchia STentry
-				n.offset = virtualTable.get(n.id).offset;
-				//virtualTable.put(n.id, new STentry(nestingLevel, new MethodTypeNode(parTypes,n.retType), n.offset));
-				virtualTable.put(n.id, new STentry(nestingLevel, n.getType(), n.offset));
+				n.offset = virtualTable.get(n.id).offset;//the old STentry is thrown away and a new one takes its place(offset must remain the same of the old STentry)
+				virtualTable.put(n.id, new STentry(nestingLevel, new MethodTypeNode(parTypes,n.retType), n.offset));
 			}
 		} else {
 			n.offset = decOffset;
-			//virtualTable.put(n.id, new STentry(nestingLevel, new MethodTypeNode(parTypes,n.retType),decOffset++));
-			virtualTable.put(n.id, new STentry(nestingLevel, n.getType(),decOffset++));
+			virtualTable.put(n.id, new STentry(nestingLevel, new MethodTypeNode(parTypes,n.retType),decOffset++));
 		}
 		
 		nestingLevel++;

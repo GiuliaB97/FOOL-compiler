@@ -269,7 +269,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	@Override
-	public Node visitMethdec(MethdecContext c) {//==funnode
+	public Node visitMethdec(MethdecContext c) {// == funnode
 		if (print) printVarAndProdName(c);
 		List<ParNode> parList = new ArrayList<>();
 		for (int i = 1; i < c.ID().size(); i++) { 
