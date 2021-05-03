@@ -88,7 +88,15 @@ public class TypeRels {
 		}else if (b instanceof EmptyTypeNode && a instanceof RefTypeNode ) {//MOD OO: EmptyTypeNode subtype of RefTypeNode (no matter which is it)
 			return a;
 		}
-
+		
+		if(a instanceof IntTypeNode || a instanceof BoolTypeNode && b instanceof IntTypeNode || b instanceof BoolTypeNode) {
+			if(a instanceof IntTypeNode || b instanceof IntTypeNode) {
+				return new IntTypeNode();
+			} else {
+				return new BoolTypeNode();
+			}
+		}
+		
 		if (a instanceof RefTypeNode && b instanceof RefTypeNode) {		//it checks if b is subtype of a, or its superclass (if it has one)
 			if(isSubtype(b,a))  return a;
 			RefTypeNode refA = (RefTypeNode)a;	

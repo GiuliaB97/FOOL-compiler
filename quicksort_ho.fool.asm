@@ -162,39 +162,39 @@ shp
 lfp
 lfp
 lfp
-stm
-ltm
 push -13
 add
+stm
+ltm
 lw
 ltm
-push -14
-add
+push 1
+sub
 lw
 lfp
 push -15
 add
 lw
 lfp
-stm
-ltm
 push -9
 add
+stm
+ltm
 lw
 ltm
-push -10
-add
+push 1
+sub
 lw
 js
 lfp
-stm
-ltm
 push -3
 add
+stm
+ltm
 lw
 ltm
-push -4
-add
+push 1
+sub
 lw
 js
 halt
@@ -322,25 +322,25 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -3
 add
+stm
+ltm
 lw
 ltm
-push -4
-add
+push 1
+sub
 lw
 js
 lfp
-stm
-ltm
 push -2
 add
+stm
+ltm
 lw
 ltm
-push -3
-add
+push 1
+sub
 lw
 js
 b label1
@@ -407,14 +407,14 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -5
 add
+stm
+ltm
 lw
 ltm
-push -6
-add
+push 1
+sub
 lw
 js
 lhp
@@ -486,28 +486,28 @@ add
 lw
 js
 lfp
-stm
-ltm
 push 3
 add
+stm
+ltm
 lw
 ltm
-push 2
-add
+push 1
+sub
 lw
 js
 push 1
 beq label12
 lfp
 lfp
-stm
-ltm
 push 3
 add
+stm
+ltm
 lw
 ltm
-push 2
-add
+push 1
+sub
 lw
 lfp
 lfp
@@ -524,14 +524,14 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -7
 add
+stm
+ltm
 lw
 ltm
-push -8
-add
+push 1
+sub
 lw
 js
 b label13
@@ -551,14 +551,14 @@ lw
 js
 lfp
 lfp
-stm
-ltm
 push 3
 add
+stm
+ltm
 lw
 ltm
-push 2
-add
+push 1
+sub
 lw
 lfp
 lfp
@@ -575,14 +575,14 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -7
 add
+stm
+ltm
 lw
 ltm
-push -8
-add
+push 1
+sub
 lw
 js
 lhp
@@ -637,14 +637,14 @@ add
 lw
 lfp
 lw
-stm
-ltm
 push 3
 add
+stm
+ltm
 lw
 ltm
-push 2
-add
+push 1
+sub
 lw
 js
 stm
@@ -659,7 +659,6 @@ js
 function7:
 cfp
 lra
-push 1
 lfp
 lfp
 lw
@@ -672,17 +671,20 @@ add
 lw
 lfp
 lw
-stm
-ltm
 push 3
 add
+stm
+ltm
 lw
 ltm
-push 2
-add
+push 1
+sub
 lw
 js
-sub
+push -1
+mult
+push 1
+add
 stm
 sra
 pop
@@ -749,25 +751,25 @@ add
 lw
 lfp
 lfp
-stm
-ltm
 push 3
 add
-lw
-ltm
-push 2
-add
-lw
-lfp
-lfp
 stm
 ltm
+lw
+ltm
+push 1
+sub
+lw
+lfp
+lfp
 push -5
 add
+stm
+ltm
 lw
 ltm
-push -6
-add
+push 1
+sub
 lw
 lfp
 lfp
@@ -784,26 +786,26 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -7
 add
+stm
+ltm
 lw
 ltm
-push -8
-add
+push 1
+sub
 lw
 js
 lfp
 lw
-stm
-ltm
 push -9
 add
+stm
+ltm
 lw
 ltm
-push -10
-add
+push 1
+sub
 lw
 js
 lhp
@@ -829,25 +831,25 @@ add
 shp
 lfp
 lfp
-stm
-ltm
 push 3
 add
-lw
-ltm
-push 2
-add
-lw
-lfp
-lfp
 stm
 ltm
+lw
+ltm
+push 1
+sub
+lw
+lfp
+lfp
 push -3
 add
+stm
+ltm
 lw
 ltm
-push -4
-add
+push 1
+sub
 lw
 lfp
 lfp
@@ -864,38 +866,38 @@ lw
 js
 lfp
 lw
-stm
-ltm
 push -7
 add
+stm
+ltm
 lw
 ltm
-push -8
-add
+push 1
+sub
 lw
 js
 lfp
 lw
-stm
-ltm
 push -9
 add
+stm
+ltm
 lw
 ltm
-push -10
-add
+push 1
+sub
 lw
 js
 lfp
 lw
-stm
-ltm
 push -5
 add
+stm
+ltm
 lw
 ltm
-push -6
-add
+push 1
+sub
 lw
 js
 b label19

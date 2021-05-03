@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 /**
  * The main of the class is to generate a String corrisponding to whole program.
- * To do this it implements a bottom up traversal of the tree (which is complete 
+ * To do this it implements a bottom up traversal of the tree (which is complete
  * because the front-end phases have already been completed
- * 
+ *
  * @author giuliabrugnatti
  *
  */
@@ -22,32 +22,32 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
   CodeGenerationASTVisitor(boolean debug) {super(false,debug);} //enables print for debugging
 
   private static List<List<String>> dispatchTables;	//ne ho una per ogni classe indrizzi di tutti i metodi anche ereditati --> etichette; Ricorda dispatch table nello heap;
-  													
-  //Dispatch pointer in AR dell'ambiente globale--> è reperibile all'offset della classe-->valore iniziale fp 
-	
+
+  //Dispatch pointer in AR dell'ambiente globale--> è reperibile all'offset della classe-->valore iniziale fp
+
   	/**
 	 * Method for the generation of a program with declarations.
-	 * It creates a string which is the result of the concatenation 
-	 * of the declaration present in the let-in. 
+	 * It creates a string which is the result of the concatenation
+	 * of the declaration present in the let-in.
 	 * Next it visit the body of the program.
 	 */
   	@Override
 	public String visitNode(ProgLetInNode n) {
 		if (print) printNode(n);
-		dispatchTables = new ArrayList<>();//The dispatch table is used only in a program with declaration, therefore it is initialized here 
+		dispatchTables = new ArrayList<>();//The dispatch table is used only in a program with declaration, therefore it is initialized here
 		String declCode = null;
-		for (Node dec : n.declist) declCode=nlJoin(declCode,visit(dec));//previous to execute the body of the program it musts allocate the AR, if not the program will use variable that would not be reachable  
+		for (Node dec : n.declist) declCode=nlJoin(declCode,visit(dec));//previous to execute the body of the program it musts allocate the AR, if not the program will use variable that would not be reachable
 		return nlJoin(
-			"push 0",	// fake offset needed to make the Main complaint with the AR defined 
-			declCode,	// generate code for declarations (allocation)			
+			"push 0",	// fake offset needed to make the Main complaint with the AR defined
+			declCode,	// generate code for declarations (allocation)
 			visit(n.exp),
 			"halt",		//Exit from the vm
 			getCode()	//return the final string containing the whole concatenation of the code
 		);
 	}
-  	
+
 	/**
-	 * Method for the generation of a program without declarations 
+	 * Method for the generation of a program without declarations
 	 */
 	@Override
 	public String visitNode(ProgNode n) {
@@ -57,9 +57,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"halt"
 		);
 	}
-	
-	
-	/** 
+
+
+	/**
 	 * Method for the management of the print instruction.
 	 * It prints the top of the stack without altering it.
 	 */
@@ -71,31 +71,31 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"print"
 		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a 'if-then-else' expression.
-	 * 
+	 *
 	 */
 	@Override
 	public String visitNode(IfNode n) {
 		if (print) printNode(n);
 	 	String l1 = freshLabel();
-	 	String l2 = freshLabel();		
+	 	String l2 = freshLabel();
 		return nlJoin(
 			visit(n.cond),	// it retrieves the condition result (it is constrained to be a boolean)
 			"push 1",		// it pushs 'true' to compare
 			"beq "+l1,		// if the condition is 'true', then jump to l1: then->branch
-			visit(n.el),	// otherwise it executes the else branch 
+			visit(n.el),	// otherwise it executes the else branch
 			"b "+l2,		//	NB b unconditional jump-> it goes directly to end
 			l1+":",
 			visit(n.th),
 			l2+":"
 		);
 	}
-	
+
 	/**
 	 * Method for the generation of an identifier.
-	 * HO : If the type is a functional: type the address of AR(offset ID) for the function declaration 
+	 * HO : If the type is a functional: type the address of AR(offset ID) for the function declaration
 	 * and function address offset ID - 1)
 	 */
 	@Override
@@ -103,8 +103,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.id);
 		String getAR = null;
 		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");	// ascend CL chain until AR of declaration
-		if(n.entry.type instanceof ArrowTypeNode) { //HO: if id is functional 
-			return nlJoin( 
+		if(n.entry.type instanceof ArrowTypeNode) { //HO: if id is functional
+			return nlJoin(
 				"lfp", getAR, // retrieve address of frame containing "id" declaration			NB indir (fp) ad AR dichiaraz. funzione (recuperato a offset ID)
 				"stm", 		  // set $tm to popped value (salvo l'indirizzo della AR - devo usarlo 2 volte)
 		        "ltm", 		  // load on the stack the address of AR where ID is declared
@@ -121,10 +121,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			);
 		}
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////// EXPRESSIONS
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '*' expression
 	 */
 	@Override
@@ -134,10 +134,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			visit(n.left),
 			visit(n.right),
 			"mult"
-		);	
+		);
 	}
 
-	/** 
+	/**
 	 * Method for the generation of a '+' expression
 	 */
 	@Override
@@ -146,11 +146,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin(
 			visit(n.left),
 			visit(n.right),
-			"add"				
+			"add"
 		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '/' expression
 	 */
 	@Override
@@ -160,10 +160,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			visit(n.left),
 			visit(n.right),
 			"div"
-		);	
+		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '-' expression
 	 */
 	@Override
@@ -173,10 +173,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			visit(n.left),
 			visit(n.right),
 			"minus"
-		);	
+		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '>=' expression
 	 */
 	@Override
@@ -195,8 +195,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			l2+":"
 		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '<=' expression
 	 */
 	@Override
@@ -215,8 +215,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			l2+":"
 		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '==' expression
 	 */
 	@Override
@@ -227,7 +227,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin(
 			visit(n.left),		//it retrieves the left value
 			visit(n.right),		//it retrieves the right value
-			"beq "+l1,			//if they are equals, then it jumps to l1-> equals label 
+			"beq "+l1,			//if they are equals, then it jumps to l1-> equals label
 			"push 0",			//otherwise it pushes 0(=false) and jump to the end
 			"b "+l2,
 			l1+":",
@@ -236,7 +236,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);
 	}
 
-	/** 
+	/**
 	 * Method for the generation of a '!' expression
 	 */
 	@Override
@@ -244,12 +244,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n);
 		return nlJoin(
 			"push 1",
-			visit(n.val),	 
-			"sub"					
-		);	
+			visit(n.val),
+			"sub"
+		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '||' expression
 	 */
 	@Override
@@ -259,20 +259,20 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		String l2 = freshLabel();		//result = 0
 		return nlJoin(
 			visit(n.left),
-			"push 1",			
+			"push 1",
 			"beq " + l1,			//if first ==1; it returns 1 without checking the whole expression
 			 visit(n.right),		//else if first ==0, then it checks the second value; if second==1 then it returns 1
 			"push 1",
 			"beq"+l1+":",
 			"push 0",				//it pushed 0 and then it jumps directly to end
-			"b"+ l2,				
+			"b"+ l2,
 			l1+":",
 			"push 1",
-			l2+":"	
-		);	
+			l2+":"
+		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a '&&' expression
 	 */
 	// Idea:considera l'aritmetica binaria 0*0=0; 0*1=0, ecc.
@@ -282,11 +282,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin(
 			visit(n.left),
 			visit(n.right),
-			"mult"					
-		);	
+			"mult"
+		);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a integer node
 	 */
 	@Override
@@ -294,8 +294,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.val.toString());
 		return "push "+n.val;
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a boolean node
 	 */
 	@Override
@@ -303,8 +303,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.val.toString());
 		return "push "+(n.val?1:0);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a empty node
 	 */
 	@Override
@@ -313,7 +313,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return "push -1";//-1 è un valore diverso da qualsiasi object pointer di qualsiasi oggetto creato
 	}
 
-	/** 
+	/**
 	 * Method for the generation of a call of a function or a method inside a class.
 	 * the main issues when dealing with functions/methods are :
 	 * - calling (the callee) and returning (to its own code)--> problem a callee can be called from multiple callers [caller]
@@ -321,8 +321,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	 * ---------------------------------------
 	 * - storing local variables [callee]
 	 * - returning a value [calle]
-	 * It starts the construction of the AR of the function that will be terminated 
-	 * with the visit of the FunNode, or the MethodNode 
+	 * It starts the construction of the AR of the function that will be terminated
+	 * with the visit of the FunNode, or the MethodNode
 	 */
 	@Override
 	public String visitNode(CallNode n) {//OO
@@ -356,9 +356,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				"js"	);
 		}
 	}
-	
-	
-	/** 
+
+
+	/**
 	 * Method for the generation of an object instantiation
 	 */
 	@Override
@@ -367,52 +367,52 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		String argCode = null, putArgsOnHeap = null;
 		for (int i=0 ; i<n.arglist.size() ; i++) {
 			argCode=nlJoin(argCode,visit(n.arglist.get(i))); // generate code for every field
-			putArgsOnHeap = nlJoin(putArgsOnHeap, 
-					"lhp", 		
-					"sw",					//store the value on the stack on the heap			
+			putArgsOnHeap = nlJoin(putArgsOnHeap,
+					"lhp",
+					"sw",					//store the value on the stack on the heap
 					"lhp","push 1","add","shp"	// increment hp
 					);
 		}
 		return nlJoin(
 				argCode,
 				putArgsOnHeap,
-				
+
 				"push "+(ExecuteVM.MEMSIZE+n.entry.offset),// push dispatch pointer's addres
 				"lw",		// put the dispatch pointer on top of the stack
 
 				"lhp",		// push hp on stack
 				"sw",		// store he dispatch pointer in hp
 				"lhp",		// copy object pointer (to be returned) on the stack; put hp on stack
-				
+
 				"lhp","push 1","add","shp"//increment hp
 				);
 	}
 
 	//////////////////////////////////////DECLARATIONS
-	
+
 	/**
 	 * Method for the generation of a function definition.
-	 * It is responsible for the termination of the AR of the function 
+	 * It is responsible for the termination of the AR of the function
 	 * (which had been partially build from with the visit of the callNode)
 	 */
 	@Override
-	public String visitNode(FunNode n) {//HO: modified for functional type management: now function can be passed as argument of the function 
+	public String visitNode(FunNode n) {//HO: modified for functional type management: now function can be passed as argument of the function
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
 			declCode = nlJoin(declCode,visit(dec));					//	generate code for the declaration: each of them allocate the result of the initialization expression if it is a var, or the address of the declared fnct (if it is a fnct)
 			if( ((DecNode)dec).getType() instanceof ArrowTypeNode) {//	declarations must be removed from the stack at the end, however functional declarations occupy double space in memory,
-				popDecl = nlJoin(popDecl,"pop", "pop");				// therefore I need to use two pop for each of them 
+				popDecl = nlJoin(popDecl,"pop", "pop");				// therefore I need to use two pop for each of them
 			}else {
 				popDecl = nlJoin(popDecl,"pop");
 			}
 		}
 		for (int i=0;i<n.parlist.size();i++) {			// parameters have already been allocated by the caller, therefore here they just have to be removed
 			if(n.parlist.get(i).getType() instanceof ArrowTypeNode) {
-				popParl = nlJoin(popParl,"pop", "pop");	// functional declarations occupy double space, therefore an additional pop must be added		
-			}else { 	
-				popParl = nlJoin(popParl,"pop"); 
-			}																		
+				popParl = nlJoin(popParl,"pop", "pop");	// functional declarations occupy double space, therefore an additional pop must be added
+			}else {
+				popParl = nlJoin(popParl,"pop");
+			}
 		}
 		String funl = freshFunLabel();//generate a new label for the function address and set the appropriate field in the node
 		putCode(
@@ -434,7 +434,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 				"js"  			// jump to to popped address (caller frame)
 			)
 		);
-		return nlJoin("lfp", "push "+funl);		
+		return nlJoin("lfp", "push "+funl);
 	}
 
 	/**
@@ -446,12 +446,12 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.id);
 		return visit(n.exp);
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a method definition.
 	 */
 	@Override
-	public String visitNode(MethodNode n) {//NB Methods cannot have funcitonal types					
+	public String visitNode(MethodNode n) {//NB Methods cannot have funcitonal types
 		if (print) printNode(n,n.id);
 		String declCode = null, popDecl = null, popParl = null;
 		for (Node dec : n.declist) {
@@ -459,7 +459,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			popDecl = nlJoin(popDecl,"pop");
 		}
 	for (int i=0;i<n.parlist.size();i++) {							// parameters have already been allocated by the caller, therefore here they just have to be removed
-			popParl = nlJoin(popParl,"pop"); 																		
+			popParl = nlJoin(popParl,"pop");
 		}
 		n.label = freshFunLabel();//generate a new label for the function address and set the appropriate field in the node
 		putCode(
@@ -482,8 +482,8 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		);
 		return "";				//return null
 	}
-	
-	/** 
+
+	/**
 	 * Method for the generation of a class definition
 	 */
 	@Override
@@ -491,15 +491,15 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		if (print) printNode(n,n.id);
 		if(n.superID!=null) {
 			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // The whole dispatch table of the superclass must be copied; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 (a offset -1 credo ci sia l'indirizzo della funzione)	di dispatchTables
-		} else {			
+		} else {
 			dispatchTables.add(new ArrayList<>());
 		}
-		
+
 		for(MethodNode m:n.methods) {
 			visit(m);
 			if(m.offset >= dispatchTables.get(dispatchTables.size()-1).size()) {
 				dispatchTables.get(dispatchTables.size()-1).add(m.label);// normalmente si usa l'etichetta del metodo della super-classe
-			} else {				
+			} else {
 				dispatchTables.get(dispatchTables.size()-1).set(m.offset, m.label);// overriding: si usa l'etichetta del metodo della classe che estende
 			}
 		}
@@ -509,16 +509,16 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 					dispatchTablesOnHeap,
 					"push "+s,	// push the label
 					"lhp", "sw",	// store label at address pointed by hp
-					"lhp","push 1","add","shp"//increment hp		
+					"lhp","push 1","add","shp"//increment hp
 					);
 		}
-		
+
 		return nlJoin(
 				"lhp",// metto sullo stack il dispatch pointer che punta alla dispach table della classe
-				dispatchTablesOnHeap// poi il codice per generare la dispach table sull'heap 
-				);		
+				dispatchTablesOnHeap// poi il codice per generare la dispach table sull'heap
+				);
 	}
-	/** 
+	/**
 	 * Method for the generation of a method call
 	 */
 	@Override
@@ -532,11 +532,11 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			argCode, 		// generate code for argument expressions in reversed order
 			"lfp", getAR, 	// retrieve address of frame containing "id" declaration
                           	// by following the static chain (of Access Links)
-			
+
 			"push "+n.entry.offset,
 			"add",			// get object pointer's address
 			"lw",			// load value of id variable(address of object instance)
-			
+
 			"stm","ltm", "ltm",// duplicate top of the stack (contains object pointer)
 			"lw",			// put dispatch pointer on stack (follow the access link)
 			"push "+n.methodEntry.offset,
@@ -544,6 +544,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			"lw",			//retrieve the address of the called method;  get value (label of method's subroutine)
 			"js"			//jump to the method ( subroutine (put address of next instruction in ra))
 		);
-	}	
-	
+	}
+
 }
