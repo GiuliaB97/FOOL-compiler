@@ -6,7 +6,32 @@ import org.antlr.v4.runtime.tree.*;
 import compiler.lib.*;
 import compiler.exc.*;
 import svm.*;
-
+/**
+ * The aim of the project: takes a program written in FOOL language and manage to execute it.
+ * The process to pass from a FOOL's program to an executable one involves several steps which involves 
+ * two main entities the compiler and the SVM.
+ * Their working flow can be summarized as follow:
+ * 
+ * ----here start the compiler's works
+ * 1. The program of the file.fool is converted in a stream of chars;
+ * 2. The aforementioned stream is taken from the lexer (class generated automatically by antlr) 
+ * 		which transforms it in a stream of token;
+ * 3. That latter stream is passed to the parser  (class generated automatically by antlr) 
+ * 		which generate the ST;
+ * 4. The ASTGenerationVisitor visits the ST, in order to create an abstract representation of the tree (AST),
+ * 		which will be used by the other visitor to check the correctness of the program;
+ * 5.a SymbolTableVisitor: takes the AST and uses it to match declarations with the corresponding usages.
+ * 5.b TypeCheckVisitor: takes the AST and uses it to check if the the rules of the FOOL language are respected,
+ * 						the result of its visit is used by the PrintEASTVisitor to print a representation of the program ;
+ * ----end front-end phases: if you arrive there, then the tree is complete and you can start to produce the code;
+ * 5.c CodeGenerationVisitor: produce an intermediate code representation (fool.asm);
+ * 
+ * ---- here start the work of SVM
+ * 6. The intermediate representation is converted in a new stream of chars
+ * 7. The chars stream is used from the lexer of the SVM to produce a stream of token;
+ * 8. The token's stream is taken from the SVM parser which produces the assembly code,
+ * 9. That will be executed by the ExecuteVM;
+ */
 public class Test {
     public static void main(String[] args) throws Exception {
    			
