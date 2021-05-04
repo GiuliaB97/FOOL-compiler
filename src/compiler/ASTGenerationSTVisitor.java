@@ -344,27 +344,43 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 		/**
 		 * Method that handles a class' declaration.
+		 * It checks if the class extends (layout changes if it does so);
+		 * next it visits its declarations in order to retrieve their type and it to a list,
+		 * create a new Field node for each of them and set their field line.
+		 * Then, it visits its method and add them to a new list (the visitMethdec handles the generation of the new Method node)
+		 * Finally, it creates the new class node and sets its line.
 		 */
-		//QUI ERRORE
 		@Override
 		public Node visitCldec(CldecContext c) {//OO
 			if (print) printVarAndProdName(c);
-			String ext = c.EXTENDS() != null ?  c.ID(1).getText() : null;
-			List<FieldNode> arglist = new ArrayList<>();
-			List<MethodNode> methlist = new ArrayList<>();
+			String supertype=null;
+			if(c.EXTENDS() != null) {
+				supertype=c.ID(1).getText();
+			}
+			List<FieldNode> argumentDecl = new ArrayList<>();
+			List<MethodNode> methodDecl = new ArrayList<>();
 			//visito il campo c.type per vedere tutti i campi
 			for(int i=0; i < c.type().size(); i++) {
 				TypeNode type = (TypeNode)visit(c.type(i));
-				FieldNode f = new FieldNode(c.ID(ext == null ? i+1 : i+2).getText(), type);
+				FieldNode f;
+				if(supertype!= null) {// if the class extends the ID of the fields starts from 2 instead of 1; because in 
+					 f = new FieldNode(c.ID( i+2).getText(), type);
+					 System.out.println("///////////////////////////////////"+ c.ID(0).getText() + supertype);
+				}else {
+					f = new FieldNode(c.ID(i+1).getText(), type);
+				}
+				
 				f.setLine(c.ID(i).getSymbol().getLine());
-				arglist.add(f);
+				argumentDecl.add(f);
 			}
 			//visito il campo c.methdec per vedere tutte le dichiarazioni di metodi
 			for(int i=0; i < c.methdec().size(); i++) {
 				MethodNode m = (MethodNode)visit(c.methdec(i));
-				methlist.add(m);
+				methodDecl.add(m);
 			}
-			Node n = new ClassNode(c.ID(0).getText(), arglist, methlist, ext);
+			
+			Node n= new ClassNode(c.ID(0).getText(), argumentDecl, methodDecl, supertype);//the last argument it is the id of the superclass
+
 			n.setLine(c.CLASS().getSymbol().getLine());
 			return n;
 		}
@@ -379,8 +395,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 			if (print) printVarAndProdName(c);
 			List<ParNode> parList = new ArrayList<>();
 			for (int i = 1; i < c.ID().size(); i++) {
-				ParNode p = new ParNode(c.ID(i).getText(),
-						(TypeNode) visit(c.hotype(i-1)));
+				ParNode p = new ParNode(c.ID(i).getText(),(TypeNode) visit(c.hotype(i-1)));
 				p.setLine(c.ID(i).getSymbol().getLine());
 				parList.add(p);
 			}
