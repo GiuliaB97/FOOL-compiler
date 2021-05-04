@@ -162,14 +162,14 @@ shp
 lfp
 lfp
 lfp
-push -13
-add
 stm
 ltm
+push -13
+add
 lw
 ltm
-push 1
-sub
+push -14
+add
 lw
 lfp
 push -15
@@ -500,14 +500,14 @@ push 1
 beq label12
 lfp
 lfp
-push 3
-add
 stm
 ltm
+push 3
+add
 lw
 ltm
-push 1
-sub
+push 2
+add
 lw
 lfp
 lfp
@@ -551,14 +551,14 @@ lw
 js
 lfp
 lfp
-push 3
-add
 stm
 ltm
+push 3
+add
 lw
 ltm
-push 1
-sub
+push 2
+add
 lw
 lfp
 lfp
@@ -659,6 +659,7 @@ js
 function7:
 cfp
 lra
+push 1
 lfp
 lfp
 lw
@@ -681,10 +682,7 @@ push 1
 sub
 lw
 js
-push -1
-mult
-push 1
-add
+sub
 stm
 sra
 pop
@@ -751,25 +749,25 @@ add
 lw
 lfp
 lfp
+stm
+ltm
 push 3
 add
+lw
+ltm
+push 2
+add
+lw
+lfp
+lfp
 stm
 ltm
-lw
-ltm
-push 1
-sub
-lw
-lfp
-lfp
 push -5
 add
-stm
-ltm
 lw
 ltm
-push 1
-sub
+push -6
+add
 lw
 lfp
 lfp
@@ -831,25 +829,25 @@ add
 shp
 lfp
 lfp
+stm
+ltm
 push 3
 add
+lw
+ltm
+push 2
+add
+lw
+lfp
+lfp
 stm
 ltm
-lw
-ltm
-push 1
-sub
-lw
-lfp
-lfp
 push -3
 add
-stm
-ltm
 lw
 ltm
-push 1
-sub
+push -4
+add
 lw
 lfp
 lfp

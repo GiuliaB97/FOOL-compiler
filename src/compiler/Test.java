@@ -5,7 +5,8 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 import compiler.lib.*;
 import compiler.exc.*;
-import svm.*;
+import svm.*;//needed from the visual svm 
+//import java.nio.file.*;//needed from the visual svm 
 /**
  * The aim of the project: takes a program written in FOOL language and manage to execute it.
  * The process to pass from a FOOL's program to an executable one involves several steps which involves 
@@ -35,7 +36,7 @@ import svm.*;
 public class Test {
     public static void main(String[] args) throws Exception {
    			
-    	String fileName = "bankloan.fool";
+    	String fileName = "quicksort_ho.fool";
 
     	CharStream chars = CharStreams.fromFileName(fileName);
     	FOOLLexer lexer = new FOOLLexer(chars);
@@ -100,6 +101,7 @@ public class Test {
 
     	System.out.println("Running generated code via Stack Virtual Machine.");
     	ExecuteVM vm = new ExecuteVM(parserASM.code);
+    	//ExecuteVM vm = new ExecuteVM(parserASM.code,parserASM.sourceMap,Files.readAllLines(Paths.get(fileName+".asm")));
     	vm.cpu();
 
     }

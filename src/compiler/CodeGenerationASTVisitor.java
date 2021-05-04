@@ -345,7 +345,9 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 			return nlJoin(
 				"lfp", 		  // load CL (ptr to frame of function "id" caller)
 				argCode, 	  // generate code for argument expressions in reversed order
-				"push", getAR, // retrieve address of frame containing "id" declaration, by following the static chain (of AL)
+				"lfp", //load object ar (if method) or first ring of the chain (if function)
+				getAR, // retrieve address of frame containing "id" declaration, by following the static chain (of AL)
+				"push "+n.entry.offset, 
 				"add",							// get function's declaration-AR's address
 				"stm", "ltm",					// save top of stack in tm register
 				"lw",							// get value (AR address of function's declaration)

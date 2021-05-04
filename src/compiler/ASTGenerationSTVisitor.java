@@ -347,25 +347,27 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		 * It checks if the class extends (layout changes if it does so);
 		 * next it visits its declarations in order to retrieve their type and it to a list,
 		 * create a new Field node for each of them and set their field line.
+		 * NB Fields are located in different positions if the class extends or not: 
+		 *    they start from 1 if the class does not extends and from 2 if it does.
 		 * Then, it visits its method and add them to a new list (the visitMethdec handles the generation of the new Method node)
 		 * Finally, it creates the new class node and sets its line.
 		 */
 		@Override
 		public Node visitCldec(CldecContext c) {//OO
 			if (print) printVarAndProdName(c);
-			String supertype=null;
+			String superClassId=null;
+			String classId= c.ID(0).getText();
 			if(c.EXTENDS() != null) {
-				supertype=c.ID(1).getText();
+				superClassId=c.ID(1).getText();
 			}
 			List<FieldNode> argumentDecl = new ArrayList<>();
 			List<MethodNode> methodDecl = new ArrayList<>();
-			//visito il campo c.type per vedere tutti i campi
+			
 			for(int i=0; i < c.type().size(); i++) {
 				TypeNode type = (TypeNode)visit(c.type(i));
 				FieldNode f;
-				if(supertype!= null) {// if the class extends the ID of the fields starts from 2 instead of 1; because in 
+				if(superClassId!= null) {// if the class extends the ID of the fields starts from 2 instead of 1; because in position 0 there is the class ID, while in position 1 there is the superclass ID
 					 f = new FieldNode(c.ID( i+2).getText(), type);
-					 System.out.println("///////////////////////////////////"+ c.ID(0).getText() + supertype);
 				}else {
 					f = new FieldNode(c.ID(i+1).getText(), type);
 				}
@@ -373,13 +375,13 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 				f.setLine(c.ID(i).getSymbol().getLine());
 				argumentDecl.add(f);
 			}
-			//visito il campo c.methdec per vedere tutte le dichiarazioni di metodi
+			
 			for(int i=0; i < c.methdec().size(); i++) {
 				MethodNode m = (MethodNode)visit(c.methdec(i));
 				methodDecl.add(m);
 			}
 			
-			Node n= new ClassNode(c.ID(0).getText(), argumentDecl, methodDecl, supertype);//the last argument it is the id of the superclass
+			Node n= new ClassNode(classId, argumentDecl, methodDecl, superClassId);//the last argument it is the id of the superclass
 
 			n.setLine(c.CLASS().getSymbol().getLine());
 			return n;
