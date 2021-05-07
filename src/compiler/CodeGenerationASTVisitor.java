@@ -9,11 +9,9 @@ import static compiler.lib.FOOLlib.*;
 import java.util.ArrayList;
 import java.util.List;
 /**
- * The main of the class is to generate a String corrisponding to whole program.
+ * The main of the class is to generate a String corresponding to whole program.
  * To do this it implements a bottom up traversal of the tree (which is complete
  * because the front-end phases have already been completed
- *
- * @author giuliabrugnatti
  *
  */
 public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidException> {
