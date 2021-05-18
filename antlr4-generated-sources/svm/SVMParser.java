@@ -1,7 +1,7 @@
 // Generated from SVM.g4 by ANTLR 4.8
 package svm;
 
-import java.util.*;
+	import java.util.HashMap;
 
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -23,7 +23,7 @@ public class SVMParser extends Parser {
 		PUSH=1, POP=2, ADD=3, SUB=4, MULT=5, DIV=6, STOREW=7, LOADW=8, BRANCH=9, 
 		BRANCHEQ=10, BRANCHLESSEQ=11, JS=12, LOADRA=13, STORERA=14, LOADTM=15, 
 		STORETM=16, LOADFP=17, STOREFP=18, COPYFP=19, LOADHP=20, STOREHP=21, PRINT=22, 
-		HALT=23, COL=24, LABEL=25, INTEGER=26, COMMENT=27, WHITESP=28, ERR=29;
+		HALT=23, COL=24, LABEL=25, INTEGER=26, WHITESP=27, ERR=28;
 	public static final int
 		RULE_assembly = 0, RULE_instruction = 1;
 	private static String[] makeRuleNames() {
@@ -47,7 +47,7 @@ public class SVMParser extends Parser {
 			null, "PUSH", "POP", "ADD", "SUB", "MULT", "DIV", "STOREW", "LOADW", 
 			"BRANCH", "BRANCHEQ", "BRANCHLESSEQ", "JS", "LOADRA", "STORERA", "LOADTM", 
 			"STORETM", "LOADFP", "STOREFP", "COPYFP", "LOADHP", "STOREHP", "PRINT", 
-			"HALT", "COL", "LABEL", "INTEGER", "COMMENT", "WHITESP", "ERR"
+			"HALT", "COL", "LABEL", "INTEGER", "WHITESP", "ERR"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -96,11 +96,33 @@ public class SVMParser extends Parser {
 	@Override
 	public ATN getATN() { return _ATN; }
 
-	 
-	public int[] code = new int[ExecuteVM.CODESIZE];    
-	private int i = 0;
-	private Map<String,Integer> labelDef = new HashMap<>();
-	private Map<Integer,String> labelRef = new HashMap<>();
+
+		
+	public int[] code = new int[ExecuteVM.CODESIZE];  
+												/* code � un array di interi che conterr� il 
+												* codice oggetto creato vuoto; con sta costante,
+	 											* idea tutte le volte che vedo un'istruzione vado a 
+	 											* popolare l'array code'' ed incremento la i
+	 											* occhio: non stiamo eseguendo ma stiamo 
+	 											* trasformando il resto in numeri
+	 											* 
+	 											* code[] contiene lo stesso codice che che c'� 
+	 											* nella variabile code di ExecuteVM.
+	 											* In ExecuteVM il codice generato da CodeGeneration 
+	 											* (.asm ) viene tradotto in corrispondenti istruzioni 
+	 											* in interi
+	 											*  */  
+	 											
+	private int i = 0; /*non stiamo eseguendo ma trasformando il testo in numeri la i verr� incrementata */
+						/* ad ogni token viene associato in maniera automatica da antlr 
+						 * un numero(SVM.tokens)
+						 */
+	private HashMap<String,Integer> labelDef = new HashMap<String,Integer>();	/* chiave id numerico
+																				 * le chiavi push pop 
+																				 */ 
+	private HashMap<Integer,String> labelRef = new HashMap<Integer,String>();	/* id numerico chiave
+																				 * un numero per ogni token
+																				 */
 
 	public SVMParser(TokenStream input) {
 		super(input);
@@ -149,8 +171,8 @@ public class SVMParser extends Parser {
 			}
 			setState(10);
 			match(EOF);
-			 for (Integer j: labelRef.keySet()) 
-											code[j]=labelDef.get(labelRef.get(j)); 
+			for(Integer j: labelRef.keySet())
+										code[j]=labelDef.get(labelRef.get(j));	
 										
 			}
 		}
@@ -219,8 +241,8 @@ public class SVMParser extends Parser {
 				match(PUSH);
 				setState(14);
 				((InstructionContext)_localctx).n = match(INTEGER);
-				code[i++] = PUSH; 
-							              code[i++] = Integer.parseInt((((InstructionContext)_localctx).n!=null?((InstructionContext)_localctx).n.getText():null));
+					code[i++] = PUSH;	
+				        			code[i++] =	Integer.parseInt((((InstructionContext)_localctx).n!=null?((InstructionContext)_localctx).n.getText():null));
 				}
 				break;
 			case 2:
@@ -230,8 +252,8 @@ public class SVMParser extends Parser {
 				match(PUSH);
 				setState(17);
 				((InstructionContext)_localctx).l = match(LABEL);
-				code[i++] = PUSH; 
-					    		             labelRef.put(i++,(((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
+				code[i++] = PUSH;			
+						  			labelRef.put(i++, (((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
 				}
 				break;
 			case 3:
@@ -307,8 +329,8 @@ public class SVMParser extends Parser {
 				match(BRANCH);
 				setState(37);
 				((InstructionContext)_localctx).l = match(LABEL);
-				code[i++] = BRANCH;
-				                       labelRef.put(i++,(((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
+					code[i++] = BRANCH;			
+					  						labelRef.put(i++, (((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
 				}
 				break;
 			case 12:
@@ -318,8 +340,8 @@ public class SVMParser extends Parser {
 				match(BRANCHEQ);
 				setState(40);
 				((InstructionContext)_localctx).l = match(LABEL);
-				code[i++] = BRANCHEQ;
-				                        labelRef.put(i++,(((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
+					code[i++] = BRANCHEQ;			
+					  						labelRef.put(i++, (((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
 				}
 				break;
 			case 13:
@@ -329,8 +351,8 @@ public class SVMParser extends Parser {
 				match(BRANCHLESSEQ);
 				setState(43);
 				((InstructionContext)_localctx).l = match(LABEL);
-				code[i++] = BRANCHLESSEQ;
-				                          labelRef.put(i++,(((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
+					code[i++] = BRANCHLESSEQ;			
+					  						labelRef.put(i++, (((InstructionContext)_localctx).l!=null?((InstructionContext)_localctx).l.getText():null));
 				}
 				break;
 			case 14:
@@ -443,7 +465,7 @@ public class SVMParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\37J\4\2\t\2\4\3\t"+
+		"\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3\36J\4\2\t\2\4\3\t"+
 		"\3\3\2\7\2\b\n\2\f\2\16\2\13\13\2\3\2\3\2\3\2\3\3\3\3\3\3\3\3\3\3\3\3"+
 		"\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3"+
 		"\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3\3"+

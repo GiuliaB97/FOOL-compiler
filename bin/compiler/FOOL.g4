@@ -7,8 +7,7 @@ public int lexicalErrors=0;
 /*------------------------------------------------------------------
  * PARSER RULES: needed to allow ANTLR to generate a proper parser
  *				it is the grammar.
- *				parser rules are described as regex.
- * ------------------------------------------------------------------*/
+ *------------------------------------------------------------------*/
   
   
 prog : progbody EOF ;
@@ -69,8 +68,7 @@ arrow 	: LPAR (hotype (COMMA hotype)* )? RPAR ARROW type ;
 /*------------------------------------------------------------------
  * LEXER RULES: needed to allow ANTLR to generate a proper lexer
  * 				the following symbols are the tokens; their order 
- * 				indicate their priority.
- * 				It map each lexem in a token.
+ * 				indicate their priority 
  *------------------------------------------------------------------*/
 
 PLUS  	: '+' ;
@@ -113,7 +111,7 @@ NUM     : '0' | ('1'..'9')('0'..'9')* ;
 
 ID  	: ('a'..'z'|'A'..'Z')('a'..'z' | 'A'..'Z' | '0'..'9')* ;
 
-//the following lexemes are not associated to tokens, but they must be recognize to be ignored.
+//the following symbols are associated to lessemi
 WHITESP  : ( '\t' | ' ' | '\r' | '\n' )+    -> channel(HIDDEN) ;
 
 COMMENT : '/*' .*? '*/' -> channel(HIDDEN) ;
