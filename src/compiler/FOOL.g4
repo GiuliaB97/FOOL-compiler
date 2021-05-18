@@ -7,7 +7,7 @@ public int lexicalErrors=0;
 /*------------------------------------------------------------------
  * PARSER RULES: needed to allow ANTLR to generate a proper parser
  *				it is the grammar.
- *				parser rules are described as regex.
+ *				Parser rules are described as regex.
  * ------------------------------------------------------------------*/
   
   

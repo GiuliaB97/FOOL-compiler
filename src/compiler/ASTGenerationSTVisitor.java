@@ -12,13 +12,12 @@ import compiler.lib.*;
 import static compiler.lib.FOOLlib.*;
 /**
  * Class responsible for the generation of the AST from the ST created from ANTLR.
- * It creates an abstract implementation of tree, where the useless tokens are not present.
- *
+ * It creates an abstract representation of the tree, where the useless tokens are not present
+ * It throw away the syntactic sugar used by programmers to define the order in which the ST
+ * should be build.
  * For each useful node of the ST this visitor try to create the corresponding node in the AST.
  * NB For the declarations before returning the new node it uses the old node to set the field
  * representing the line in which the declaration of the expression appears.
- *
- *
  */
 public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
@@ -34,9 +33,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	public Node visitLetInProg(LetInProgContext c) {//OO
 		if (print) printVarAndProdName(c);
 		List<DecNode> declist = new ArrayList<>();
-		for (CldecContext cldec : c.cldec()) declist.add((DecNode) visit(cldec));// OO: cldec: class declaration
-		for (DecContext dec : c.dec()) declist.add((DecNode) visit(dec));
-		return new ProgLetInNode(declist, visit(c.exp()));
+		for (CldecContext cldec : c.cldec()) declist.add((DecNode) visit(cldec));// OO: cldec->class declaration; in our layout the class the declaration are the first one to be declared; therefore if they are present they are at the top of the declaration section.
+		for (DecContext dec : c.dec()) declist.add((DecNode) visit(dec));//other declarations of the environment section (variables, functions, etc.).
+		return new ProgLetInNode(declist, visit(c.exp()));//once all the declarations have been processed the "let section" is ended and the "in section" must be processed.
 	}
 
 	/**
@@ -45,8 +44,9 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	@Override
 	public Node visitNoDecProg(NoDecProgContext c) {
 		if (print) printVarAndProdName(c);
-		return new ProgNode(visit(c.exp()));
+		return new ProgNode(visit(c.exp()));//since there is no "let section" (there are not declarations), it processes only the "in section" .
 	}
+	
 	/**
 	 * Method that handles the generation of the print instruction.
 	 */
@@ -83,7 +83,8 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	/**
 	 * Method that responsible for the generation of 'if-then-else' node.
 	 * It returns a new node initialized with the result of the visit on its three expressions.
-	 * NB before returning it it uses the if expression to properly set the field corresponding to the expression declaration in the new node.
+	 * NB b
+	 * Before returning it, it uses the 'if expression' to properly set the field corresponding to the expression declaration in the new node.
 	 */
 	@Override
 	public Node visitIf(IfContext c) {
@@ -95,12 +96,16 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		n.setLine(c.IF().getSymbol().getLine());
 		return n;
 	}
-
+	/**
+	 * Method responsible for the generation of a parameter node.
+	 * 
+	 */
 	@Override
 	public Node visitPars(ParsContext c) {
 		if (print) printVarAndProdName(c);
-		return visit(c.exp());
+		return visit(c.exp());				//the only thing it must do is to visit its expression, to initialize the node with the correct value.
 	}
+	
 	/**
 	 * Method responsible for the generation of an 'identifier' node.
 	 */
@@ -169,14 +174,13 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 	/**
 	 * Method that handles the generation of the '!' node.
-	 * It creates the new node initializing it with expression.
-	 * Before returning the node it checks its declaration line in the new node fields.
+	 *
 	 */
 	@Override
 	public Node visitNot(NotContext c) {//LE
 		if (print) printVarAndProdName(c);
-		Node n = new NotNode(visit(c.exp()));
-		n.setLine(c.NOT().getSymbol().getLine());
+		Node n = new NotNode(visit(c.exp())); // It creates the new node initializing it with expression.
+		n.setLine(c.NOT().getSymbol().getLine());//	Before returning the node it checks its declaration line in the new node fields.
 		return n;
 	}
 
@@ -240,7 +244,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that generates a 'call' node
+	 * Method that generates a 'call' node (invocation of function or a method within the class). 
 	 */
 
 	@Override
@@ -254,15 +258,17 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that handle a 'method call' .
+	 * Method that handle a 'method call'.
+	 * Method called each time a method is called with ID.ID2() notation.
 	 */
 	@Override
-	public Node visitDotCall(DotCallContext c) {																											//(ID1.ID2(par1,pars2))
+	public Node visitDotCall(DotCallContext c) {//(ID1.ID2(par1,pars2))
 		if (print) printVarAndProdName(c);
 		List<Node> argList = new ArrayList<>();
 		for (ExpContext arg : c.exp()) argList.add(visit(arg));
-		Node n = new ClassCallNode(c.ID(0).getText(), //classID-->refTypeNode con all'interno la classe a cui si riferisce
-				c.ID(1).getText(), argList);		//arglist
+		Node n = new ClassCallNode(c.ID(0).getText(), //classID-->retrieve the name of the class on which the method is calle.
+				c.ID(1).getText(), //methodID: name of the method called (name  not label)
+				argList);		//argument list passed to the method
 		n.setLine(c.ID(0).getSymbol().getLine());
 		return n;
 	}
@@ -316,13 +322,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 		/**
 		 * Method that handles a class' declaration.
-		 * It checks if the class extends (layout changes if it does so);
-		 * next it visits its declarations in order to retrieve their type and it to a list,
-		 * create a new Field node for each of them and set their field line.
-		 * NB Fields are located in different positions if the class extends or not: 
-		 *    they start from 1 if the class does not extends and from 2 if it does.
-		 * Then, it visits its method and add them to a new list (the visitMethdec handles the generation of the new Method node)
-		 * Finally, it creates the new class node and sets its line.
 		 */
 		@Override
 		public Node visitCldec(CldecContext c) {//OO
@@ -335,7 +334,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 			List<FieldNode> argumentDecl = new ArrayList<>();
 			List<MethodNode> methodDecl = new ArrayList<>();
 			
-			for(int i=0; i < c.type().size(); i++) {
+			for(int i=0; i < c.type().size(); i++) {		//next it visits its declarations in order to retrieve their type and it to a list, it creates a new Field node for each of them and set their field line.
 				TypeNode type = (TypeNode)visit(c.type(i));
 				FieldNode f;
 				if(superClassId!= null) {// if the class extends the ID of the fields starts from 2 instead of 1; because in position 0 there is the class ID, while in position 1 there is the superclass ID
@@ -348,16 +347,17 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 				argumentDecl.add(f);
 			}
 			
-			for(int i=0; i < c.methdec().size(); i++) {
+			for(int i=0; i < c.methdec().size(); i++) {				//Then, it visits its method and add them to a new list (the visitMethdec handles the generation of the new Method node)
 				MethodNode m = (MethodNode)visit(c.methdec(i));
 				methodDecl.add(m);
 			}
 			
 			Node n= new ClassNode(classId, argumentDecl, methodDecl, superClassId);//the last argument it is the id of the superclass
 
-			n.setLine(c.CLASS().getSymbol().getLine());
+			n.setLine(c.CLASS().getSymbol().getLine());//Finally, it creates the new class node and sets its line.
 			return n;
 		}
+		
 		/**
 		 * Method responsible for the generation of  the declaration of a method.
 		 */
@@ -402,14 +402,14 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	@Override
-	public Node visitArrow(ArrowContext c) { // HO hotype: (hotype,hotype)->type
-		if (print) printVarAndProdName(c);
+	public Node visitArrow(ArrowContext c) { // HO hotype: (hotype,hotype)->type: LPAR (hotype (COMMA hotype)* )? RPAR ARROW type ;  
+		if (print) printVarAndProdName(c); //hotype: type| arrowtype
 
-		List<TypeNode> parTypeList = new ArrayList<>();	 // carico i parametri che sono hotype (quindi ricorsivamente potrebbero anche essere di tipo arrow)
-		for (int i = 0; i < c.hotype().size(); i++)  	 // attenzione: non sono parNode come su funzione ma typeNode perchè è un TIPO: la sintassi è x:(int,int)->int
+		List<TypeNode> parTypeList = new ArrayList<>();	 
+		for (int i = 0; i < c.hotype().size(); i++)  	 //(hotype1, hotype2, ...)
 			parTypeList.add((TypeNode) visit(c.hotype(i)));
 
-		Node n = new ArrowTypeNode(parTypeList, (TypeNode)visit(c.type()));  // il ritorno è sempre type
+		Node n = new ArrowTypeNode(parTypeList, (TypeNode)visit(c.type()));  
 		n.setLine(c.ARROW().getSymbol().getLine());
 		return n;
 	}
