@@ -6,35 +6,28 @@ import compiler.AST.*;
 import compiler.exc.*;
 import compiler.lib.*;
 /**
- * The aim of the class is to enrich the tree; 
+ * The aim of the class is to enrich the AST; 
  * It is generated at compile time and it matches declarations with their occurrences, 
  * checking if they are multiple declared, not declared etc.
- * The class contain a list of tables organized, whom organization depends on the scope:
- * global environment is at nesting level 0, 
- * the map and the nesting level variable are always updated 
- * (incrementing the nesting level when you enter in a new scope and decremented it when you go out)
- * therefore they point to the level in which the program is currently.
- *  
- *
  */
 public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
-	private List<Map<String, STentry>> symTable = new ArrayList<>();/*It is used when the program meet declarations and uses (and enter or exit in a new scope)
-	*/
-	private int nestingLevel=0; //Nesting level attuale: parte da zero ambiente globale
+	private List<Map<String, STentry>> symTable = new ArrayList<>();//It is used when the program meets  declarations and uses (and enter or exit in a new scope)
+	private int nestingLevel=0; //Current nesting level: global env=0
 	private int decOffset=-2; /*counter for offset of local declarations at current nesting level 
-								parte da -2 e lo decommento ogni volta che incontro una nuova dichiarazione (di classe) 
+								it starts from -2 and it is decremented each times a new declaration is met 
 								*/
 	int stErrors=0;
 
-	private Map<String, Map<String,STentry>> classTable = new HashMap<>();		//OO: it map each class identifier to its virtual table, its aim is to maintain the declarations of the fields and methods of the class, once the visitor finishes the visit of the declaration
+	private Map<String, Map<String,STentry>> classTable = new HashMap<>();	//OO: it maps each class identifier to its virtual table, its aim is to maintain the declarations of the fields and methods of the class, once the visitor finishes the visit of the class
 	
 	SymbolTableASTVisitor() {}
 	SymbolTableASTVisitor(boolean debug) {super(debug);} // enables print for debugging
 
 	/**
-	 * Method that look for the entry corresponding at the id that takes as argument.
-	 * It starts its search at the current nesting level and go back until it found the entry it is looking for, 
-	 * or it reaches the global environment (level = 0)
+	 * Method that looks for the entry corresponding at the id that takes as argument.
+	 * It starts its search at the current nesting level and go back until it finds the entry it is looking for, 
+	 * or it reaches the global environment (level = 0).
+	 * 
 	 * @param variable id
 	 * @return entry
 	 */
@@ -48,9 +41,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handles the root of a let-in program.
-	 * It is responsible for the creation of the table for the global environment
-	 * (it will contain the declarations for the nesting level =0).
+	 * Method that handles the root of a 'let-in' program.
+	 * It is responsible for the creation of the table for the global environment (it will contain the declarations for the nesting level =0).
 	 * Next it visits all its declaration and its body expression, 
 	 * finally it removes the table it had created because when all uses have been processed to link 
 	 * each ID node in the abstract-syntax tree with the corresponding symbol-table entry,
@@ -83,8 +75,9 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	/**
 	 * Method responsible for the management of the declaration of a function.
 	 * Since, all declarations must be at nesting level 0, it does not have to create one,
-	 * it get it and create a new entry for its declaration (its id) and try to insert it in the table.
-	 * Next, it creates a table for its parameters inserting them in the new table.
+	 * it gets it and creates a new entry for its declaration (its id) and try to insert it in the table.
+	 * Next, it creates a table for its parameters (it is entering in the internal scope of the function, therefore a new table is needed) 
+	 * inserting them in the new table.
 	 * Finally it launches the visit on its declaration and body expression.
 	 * 
 	 * NB since the type of the function is not set in the constructor, it musts be set here.
@@ -95,7 +88,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		Map<String, STentry> hm = symTable.get(nestingLevel);
 		List<TypeNode> parTypes = new ArrayList<>();  
 		for (ParNode par : n.parlist) parTypes.add(par.getType()); 
-		n.setType(new ArrowTypeNode(parTypes, n.retType));												//function type is not set in the constructur (AST)
+		n.setType(new ArrowTypeNode(parTypes, n.retType));												//function type is not set in the constructor (AST)
 		
 		STentry entry = new STentry(nestingLevel, 
 				new ArrowTypeNode(parTypes,n.retType),decOffset--);
@@ -109,7 +102,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		
 		//creare una nuova hashmap per la symTable
 		nestingLevel++;																					//it is entering in a new scope so it needs to increment the nesting level
-		Map<String, STentry> hmn = new HashMap<>();														//And create a new table
+		Map<String, STentry> hmn = new HashMap<>();														//and create a new table
 		symTable.add(hmn);
 		int prevNLDecOffset=decOffset; 																	// stores counter for offset of declarations at previous nesting level 
 		decOffset=-2;
@@ -125,7 +118,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		for (Node dec : n.declist) visit(dec);															//next it visits its declarations
 		visit(n.exp);
 		
-		symTable.remove(nestingLevel--);																//when it finishes it throws away the table becuase it is no loger needed
+		symTable.remove(nestingLevel--);																//when it finishes it throws away the table because it is no longer needed
 		decOffset=prevNLDecOffset; 																		//and it restores counter for offset of declarations at previous nesting level 
 		return null;
 	}
@@ -133,8 +126,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	
 	/**
 	 * Method that handles a variable declaration.
-	 * EIther if it is a global variable or, a variable in a function (/method), the table for the scope in which it is declared 
-	 * must already exist, so it gets it, create a new entry for itself and try to insert is in the table
+	 * Either if it is a global variable or, a variable in a function (/method), the table for the scope in which it is declared 
+	 * must already exist, so it gets it, creates a new entry for itself and try to insert is in the table.
 	 */
 	@Override
 	public Void visitNode(VarNode n) {
@@ -144,7 +137,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		STentry entry = new STentry(nestingLevel,n.getType(),decOffset--);
 		if(n.getType() instanceof ArrowTypeNode) decOffset--;
 		//inserimento di ID nella symtable
-		if (hm.put(n.id, entry) != null) {//it checks for multiple declaration
+		if (hm.put(n.id, entry) != null) {//it checks for multiple declarations
 			System.out.println("Var id " + n.id + " at line "+ n.getLine() +" already declared");
 			stErrors++;
 		}
@@ -158,8 +151,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	/**
-	 * Method that handle an if-then-else expression.
-	 * It just launches a visit on the three nodes expressions.
+	 * Method that handle an 'if-then-else' expression.
+	 * It just executes a visit on the three nodes expressions.
 	 */
 	@Override
 	public Void visitNode(IfNode n) {
@@ -171,8 +164,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle an equal expression.
-	 * It just launches a visit on the two nodes expressions.
+	 * Method that handle an '=' expression.
+	 * It just executes a visit on the two nodes expressions.
 	 */
 	@Override
 	public Void visitNode(EqualNode n) {
@@ -183,8 +176,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle an times expression.
-	 * It just launches a visit on the two nodes expressions.
+	 * Method that handle an '*' expression.
+	 * It just executes a visit on the two nodes expressions.
 	 */	
 	@Override
 	public Void visitNode(TimesNode n) {
@@ -195,8 +188,8 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle an plus expression.
-	 * It just launches a visit on the two nodes expressions.
+	 * Method that handle an '+' expression.
+	 * It just executes a visit on the two nodes expressions.
 	 */
 	@Override
 	public Void visitNode(PlusNode n) {
@@ -207,7 +200,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handles the call of a function, or a method one if called by another method of the same class.
+	 * Method that handles the call of a function, or a method if called within a class.
 	 * It looks for the entry for the node that should have been previously declared
 	 * and if it so it uses the entry in the table to update its fields.
 	 * Next, it launches a visit on its arguments.
@@ -219,7 +212,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (entry == null) {																	//if the function/method is not declared
 			System.out.println("Fun id " + n.id + " at line "+ n.getLine() + " not declared");
 			stErrors++;
-		} else {
+		} else {				//link the declaration with the usage
 			n.entry = entry;
 			n.nl = nestingLevel;
 		}
@@ -238,9 +231,9 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (entry == null) {
 			System.out.println("Var or Par id " + n.id + " at line "+ n.getLine() + " not declared");
 			stErrors++;
-		} else {
+		} else {				//link the declaration with the usage
 			n.entry = entry;
-			n.nl = nestingLevel;
+			n.nl = nestingLevel; 
 		}
 		return null;
 	}
@@ -263,7 +256,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	/**
-	 * Method that handle a greater-equal expression.
+	 * Method that handle a '>=' expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -275,7 +268,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle a less-equal expression.
+	 * Method that handle a '<=' expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -287,7 +280,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle a not expression.
+	 * Method that handle a '!' expression.
 	 * It just launches a visit on the node expression.
 	 */
 	@Override
@@ -297,7 +290,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	/**
-	 * Method that handle a division expression.
+	 * Method that handle a '/' expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -309,7 +302,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	}
 	
 	/**
-	 * Method that handle a minus expression.
+	 * Method that handle a '-' expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -320,7 +313,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	/**
-	 * Method that handle an or expression.
+	 * Method that handle an '||' expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -331,7 +324,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	/**
-	 * Method that handle an and expression.
+	 * Method that handle an "&&" expression.
 	 * It just launches a visit on the two nodes expressions.
 	 */
 	@Override
@@ -342,16 +335,14 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		return null;
 	}
 	
-	////////////////////////////////////////////////////////////////////////
-	
 	/**
 	 * Method that handles the declaration of a class.
 	 * Firstly, it crates a new table (Virtual Table) which will contains the declarations of the class;
 	 * if the class extends another class the table should contain also the entries of the methods and 
-	 * the fields of the superclass (the ones where that the new class has not overridden).
+	 * the fields of the superclass (the ones not overridden).
 	 * Furthermore, the method need a new variable to manage the optimization task, 
 	 * that latter is used to check if methods and fields of the super class have been overridden in a wrong way; 
-	 * that is to say it is considered not correct to override fields and methods inside the same class.
+	 * that is to say it is considered not correct to override fields and methods multiple times inside the same class.
 	 *  
 	 *  
 	 *  Finally, it visits all its declaration, remove its table from the symbol table and reset the offset.
@@ -418,7 +409,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				stErrors++;
 			}
 											
-			if(virtualTable.containsKey(field.id)) {//Methods cannot be overridden with fields
+			if(virtualTable.containsKey(field.id)) {//Methods cannot be overridden with fields, or declared multiple times within the same class
 				if(virtualTable.get(field.id).type instanceof MethodTypeNode) {
 					System.out.println("Cannot override method id " + field.id + " with a field at line "+ n.getLine());
 					stErrors++;
@@ -472,11 +463,11 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		for (ParNode par : n.parlist) parTypes.add(par.getType()); 
 		
 		if(virtualTable.containsKey(n.id)) {																	
-			if(!(virtualTable.get(n.id).type instanceof MethodTypeNode)) {//methods can be overriden only with other method
+			if(!(virtualTable.get(n.id).type instanceof MethodTypeNode)) {//methods can be overridden only with other method
 				System.out.println("Cannot override method id " + n.id + " with a field at line "+ n.getLine());
 				stErrors++;
 			} else {
-				n.offset = virtualTable.get(n.id).offset;//the old STentry is thrown away and a new one takes its place(offset must remain the same of the old STentry)
+				n.offset = virtualTable.get(n.id).offset;//the old STentry is thrown away and a new one takes its place (offset must remain the same of the old STentry)
 				virtualTable.put(n.id, new STentry(nestingLevel, new MethodTypeNode(parTypes,n.retType), n.offset));
 			}
 		} else {
@@ -485,9 +476,9 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		}
 		
 		nestingLevel++;
-		Map<String, STentry> hmn = new HashMap<>();//a new map must be created 
+		Map<String, STentry> hmn = new HashMap<>();//a new map must be created because it is entering in the internal scope of the method
 		symTable.add(hmn);
-		int prevNLDecOffset=decOffset; // stores counter for offset of declarations at previous nesting level 
+		int prevNLDecOffset=decOffset; //it stores counter for offset of declarations at previous nesting level 
 		decOffset=-2;
 		
 		int parOffset=1;
@@ -498,16 +489,16 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			}
 		for (Node dec : n.declist) visit(dec);
 		visit(n.exp);            
-		symTable.remove(nestingLevel--);// map of the current level must be removed because I am exiting from the scope
-		decOffset=prevNLDecOffset; // restores counter for offset of declarations at previous nesting level 
+		symTable.remove(nestingLevel--);// map of the current level must be removed because it is exiting from the scope
+		decOffset=prevNLDecOffset; // it restores counter for offset of declarations at previous nesting level 
 		return null;
 	}
 	
 	/**
-	 * Method that handles a method call.
-	 * Firstly it retrieves, the entry of the method from the symbol table (it search for it at the current nesting level)
-	 * if it finds it, then it uses the entry to set the node's field.
-	 * Next, it uses the class table to search in the Virtual Table 
+	 * Method that handles a method call (called with ID.ID2()).
+	 * Firstly it retrieves, the entry of the class from the symbol table and it uses it to retrieve from the class table 
+	 * the virtual table of the class and from that it gets the method entry.
+	 * If it finds it, then it uses the entry to set the node's field.
 	 */
 	@Override
 	public Void visitNode(ClassCallNode n) {
@@ -520,7 +511,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 			stErrors++;
 		}
 		STentry methodEntry = classTable.get(((RefTypeNode)entry.type).id).get(n.methodID);
-		if (methodEntry != null) {// searched in VT ( reached using CT of the class of the type RefTypeNode)
+		if (methodEntry != null) {
 			n.methodEntry = methodEntry;
 			n.nl = nestingLevel;
 		} else {
@@ -542,10 +533,10 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 	public Void visitNode(NewNode n) {
 		if (print) printNode(n);
 		if(classTable.containsKey(n.id)) {
-			STentry entry = symTable.get(0).get(n.id); //and STentry took at level 0 of the ST
+			STentry entry = symTable.get(0).get(n.id); //and STentry took at level 0 of the ST because class are at the beginning of the let-section
 			n.entry = entry;
 			n.nl = nestingLevel;
-		} else {
+		} else {							//if it is not in class table then it has not been declared
 			System.out.println("Class id " + n.id + " at line "+ n.getLine() + " not declared");
 			stErrors++;
 		}

@@ -281,7 +281,7 @@ public class AST {
 
 	public static class FieldNode extends DecNode {
 		final String id;
-		int offset; //added for OO Otypecheck
+		int offset; //added for OO O type-check
 		FieldNode(String i, TypeNode t) {id = i; type = t;}
 
 		@Override
