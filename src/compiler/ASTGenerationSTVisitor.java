@@ -18,7 +18,6 @@ import static compiler.lib.FOOLlib.*;
  * NB For the declarations before returning the new node it uses the old node to set the field
  * representing the line in which the declaration of the expression appears.
  *
- * @author giuliabrugnatti
  *
  */
 public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
@@ -29,9 +28,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	ASTGenerationSTVisitor() {}
 	ASTGenerationSTVisitor(boolean debug) { print=debug; }
 	/**
-	 * Method that responsible of the generation of a prog-let-in node.
-	 * It visits all the declarations present in the let-in section;
-	 * adding then to a list that will be use to inizialize a new prog-let-it node.
+	 * Method that responsible of the generation of a 'prog-let-in' node.
 	 */
 	@Override
 	public Node visitLetInProg(LetInProgContext c) {//OO
@@ -43,9 +40,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that responsible of the generation of a prog node.
-	 * Since there are no declarations in the program it just returns a new
-	 * prog node initialized with the visit at its body.
+	 * Method that responsible of the generation of a 'prog' node.
 	 */
 	@Override
 	public Node visitNoDecProg(NoDecProgContext c) {
@@ -54,7 +49,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 	/**
 	 * Method that handles the generation of the print instruction.
-	 * It just returns a new Print node initialized with the visit at its expression.
 	 */
 	@Override
 	public Node visitPrint(PrintContext c) {
@@ -87,7 +81,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * MEthod that responsible for the generation of if-then-else expression.
+	 * Method that responsible for the generation of 'if-then-else' node.
 	 * It returns a new node initialized with the result of the visit on its three expressions.
 	 * NB before returning it it uses the if expression to properly set the field corresponding to the expression declaration in the new node.
 	 */
@@ -108,9 +102,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		return visit(c.exp());
 	}
 	/**
-	 * Method responsible for the generation of an identifier-
-	 * It returns a new node initialized with the old node identifier and
-	 * uses that latter to set the field of the new node corresponding to its line's declaration.
+	 * Method responsible for the generation of an 'identifier' node.
 	 */
 	@Override
 	public Node visitId(IdContext c) {
@@ -122,15 +114,13 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 	//EXPRESSIONS
 	/**
-	 * Method that handles the generation of the plus and minus node.
-	 * It checks which of the two node must create, then it creates it initializing it with two expressions.
-	 * Before returning the node it checks its declaration line in the new node fields.
+	 * Method that handles the generation of the '+' and '-' node.
 	 */
 	@Override
 	public Node visitPlusMinus(PlusMinusContext c) {//LE: merged plus and minus
 		if (print) printVarAndProdName(c);
 		Node n = null;
-		if(c.PLUS() != null) {
+		if(c.PLUS() != null) {									
 			n = new PlusNode(visit(c.exp(0)), visit(c.exp(1)));
 			n.setLine(c.PLUS().getSymbol().getLine());
 		} else if(c.MINUS() != null){
@@ -141,8 +131,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 	/**
 	 * Method that handles the generation of the times and divisions node.
-	 * It checks which of the two node must create, then it creates it initializing it with two expressions.
-	 * Before returning the node it checks its declaration line in the new node fields.
 	 */
 	@Override
 	public Node visitTimesDiv(TimesDivContext c) {//LE: merged times & div
@@ -159,9 +147,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that handles the generation of the equal, greater-equal and less-equal node.
-	 * It checks which of the three node must create, then it creates it initializing it with two expressions.
-	 * Before returning the node it checks its declaration line in the new node fields.
+	 * Method that handles the generation of the '==', '>=' and '<=' node.
 	 */
 	@Override
 	public Node visitComp(CompContext c) {//LE: merged <=, >=, ==
@@ -182,7 +168,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that handles the generation of the not node.
+	 * Method that handles the generation of the '!' node.
 	 * It creates the new node initializing it with expression.
 	 * Before returning the node it checks its declaration line in the new node fields.
 	 */
@@ -195,9 +181,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that handles the generation of the and and or node.
-	 * It checks which of the two node must create, then it creates it initializing it with two expressions.
-	 * Before returning the node it checks its declaration line in the new node fields.
+	 * Method that handles the generation of the '&&' and '||' node.
 	 */
 	@Override
 	public Node visitAndOr(AndOrContext c) {//LE: && & !! are new, but they are handled just as: *, /, -, +
@@ -214,8 +198,8 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method responsible of the generation of a bool node.
-	 * In particular, this one initialize the node with a true value.
+	 * Method responsible of the generation of a 'bool' node.
+	 * In particular, this one initialize the node with a 'true' value.
 	 */
 	@Override
 	public Node visitTrue(TrueContext c) {
@@ -224,8 +208,8 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method responsible of the generation of a bool node.
-	 * In particular, this one initialize the node with a false value.
+	 * Method responsible of the generation of a 'bool' node.
+	 * In particular, this one initialize the node with a 'false' value.
 	 */
 	@Override
 	public Node visitFalse(FalseContext c) {
@@ -256,10 +240,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that generates a call node initializing it it with its ID, its argument list and
-	 * as appens for almost all the other declarations it uses the former node to properly set the field
-	 * corresponding to the line in which the function/method (called bu another method in the same class)
-	 * is declared.
+	 * Method that generates a 'call' node
 	 */
 
 	@Override
@@ -273,13 +254,10 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	}
 
 	/**
-	 * Method that handle a method call ( ID1.ID2(par1,pars2)).
-	 * When it initialize the node it retrieves the class ID, its ID its arguments list
-	 * (which it has previously visited and added to a list),
-	 * next it sets the field representing the line in which it is declared using the former node.
+	 * Method that handle a 'method call' .
 	 */
 	@Override
-	public Node visitDotCall(DotCallContext c) {
+	public Node visitDotCall(DotCallContext c) {																											//(ID1.ID2(par1,pars2))
 		if (print) printVarAndProdName(c);
 		List<Node> argList = new ArrayList<>();
 		for (ExpContext arg : c.exp()) argList.add(visit(arg));
@@ -291,9 +269,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 
 	/**
 	 * Method that handle an object instantiation.
-	 * When it initialize the node it retrieves the class ID and its arguments list
-	 * (which it has previously visited and added to a list),
-	 * next it sets the field representing the line in which it is declared using the former node.
 	 */
 	@Override
 	public Node visitNew(NewContext c) {
@@ -308,9 +283,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 	//DECLARATIONS
 	/**
 	 * Method responsible for the generation of  the declaration of a function.
-	 * It musts declare also its parameters and set their line field.
-	 * Next, it must handles possible declaration within the function visiting all of them.
-	 * Finally it returns a function node also setting its line field.
 	 */
 		@Override
 		public Node visitFundec(FundecContext c) {
@@ -357,7 +329,7 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 			if (print) printVarAndProdName(c);
 			String superClassId=null;
 			String classId= c.ID(0).getText();
-			if(c.EXTENDS() != null) {
+			if(c.EXTENDS() != null) {			//It checks if the class extends (layout changes if it does so);
 				superClassId=c.ID(1).getText();
 			}
 			List<FieldNode> argumentDecl = new ArrayList<>();
@@ -388,9 +360,6 @@ public class ASTGenerationSTVisitor extends FOOLBaseVisitor<Node> {
 		}
 		/**
 		 * Method responsible for the generation of  the declaration of a method.
-		 * It musts declare also its parameters and set their line field.
-		 * Next, it must handles possible declaration within the function visiting all of them.
-		 * Finally it returns a function node also setting its line field.
 		 */
 		@Override
 		public Node visitMethdec(MethdecContext c) {// == funnode

@@ -23,7 +23,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		visit(t);
 		return t;
 	}
-	////////////////////////////////////////////////////////////////////////////////////////////////////DECLARATIONS
+	///////////////////////////////////////////DECLARATIONS
 	/**
 	 * Method that checks if a "let-in" program respects the type rules of the language.
 	 * */
@@ -110,21 +110,22 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	@Override
 	public TypeNode visitNode(ClassNode n) throws TypeException {//OO
 		if (print) printNode(n,n.id);
+		int position;
 		if(n.superID != null) {
 			TypeRels.superType.put(n.id, n.superID);
 			ClassTypeNode parentCT = (ClassTypeNode)n.superEntry.type;
 			for(int i = 0; i<n.fields.size(); i++) {
 				
-				int j =-n.fields.get(i).offset-1;	//fields are on the stack which grows downwards
-				if(j < parentCT.allFields.size()) {	//it is checking just if a field is trying to override in a wrong way a field of its superclass so it must stop when the superclass' fields are finished
-					if(!isSubtype(n.fields.get(i).getType(), parentCT.allFields.get(j))) {
+				position =-n.fields.get(i).offset-1;	//fields are on the stack which grows downwards;  NB because of field's layout: position= -offset-1
+				if(position < parentCT.allFields.size()) {	//it is checking just if a field is trying to override in a wrong way a field of its superclass so it must stop when the superclass' fields are finished
+					if(!isSubtype(n.fields.get(i).getType(), parentCT.allFields.get(position))) {
 						throw new TypeException("Fields must be subtype of the ones declared in superclass",n.getLine());
 					}
 				}
 			}
 			
 			for(int i = 0; i<n.methods.size(); i++) {
-				int position = n.methods.get(i).offset;
+				position = n.methods.get(i).offset;//NB because of method's layout: position = offset
 				if(position < parentCT.allMethods.size()) {
 					if(!isSubtype(n.methods.get(i).getType(), parentCT.allMethods.get(position))) {
 						throw new TypeException("Methods must be subtype of the ones declared in superclass",n.getLine());
@@ -143,11 +144,11 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		}
 		return null;
 	}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////TIENILA IN STANDBY
+	
 	///////////////////////////////////////// EXPRESSIONS
 	/**
-	 * Method responsible for type-check of a "times" expression.
-	 * According to the rules of the language, a times expression can be used only with integer operators.
+	 * Method responsible for type-check of a '*' expression.
+	 * According to the rules of the language, a '*' expression can be used only with integer operators.
 	 */
 	@Override
 	public TypeNode visitNode(TimesNode n) throws TypeException {
@@ -159,8 +160,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of a "plus" expression.
-	 * According to the rules of the language, a plus expression can be used only with integer operators.
+	 * Method responsible for type-check of a '+' expression.
+	 * According to the rules of the language, a '+' expression can be used only with integer operators.
 	 *
 	 */
 	@Override
@@ -173,8 +174,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of a "minus" expression.
-	 * According to the rules of the language, a minus expression can be used only with integer operators.
+	 * Method responsible for type-check of a '-' expression.
+	 * According to the rules of the language, a '-' expression can be used only with integer operators.
 	 */
 	@Override
 	public TypeNode visitNode(MinusNode n) throws TypeException {	//LE
@@ -186,8 +187,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of a "division" expression.
-	 * According to the rules of the language, a division expression can be used only with integer operators.
+	 * Method responsible for type-check of a '/' expression.
+	 * According to the rules of the language, a '/' expression can be used only with integer operators.
 	 */
 	@Override
 	public TypeNode visitNode(DivNode n) throws TypeException {		//LE
@@ -199,8 +200,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of a "greater-equal" expression.
-	 * To be compliant with the type rules of the language a "greater-equal" expression 
+	 * Method responsible for type-check of a '>=' expression.
+	 * To be compliant with the type rules of the language a '>=' expression 
 	 * cannot be used with functional types and it must be used only if 
 	 * its operators are one sub-type of the other
 	 */
@@ -215,8 +216,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of a "less-equal" expression.
-	 * To be compliant with the type rules of the language a "less-equal" expression 
+	 * Method responsible for type-check of a '<=' expression.
+	 * To be compliant with the type rules of the language a '<=' expression 
 	 * cannot be used with functional types and it must be used only 
 	 * if its operators are one sub-type of the other.
 	 */
@@ -231,8 +232,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	}
 
 	/**
-	 * Method responsible for type-check of an "equal" expression.
-	 * To be compliant with the type rules of the language an "equal" expression 
+	 * Method responsible for type-check of an '==' expression.
+	 * To be compliant with the type rules of the language an  '==' expression 
 	 * cannot be used with functional types and it must be used only if 
 	 * its operators are one sub-type of the other.
 	 */	@Override
@@ -248,8 +249,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	 }
 
 	 /**
-	  * Method responsible for type-check of a "not" expression.
-	  * According to the rules of the language, a "not" expression can be used only with a boolean operator.
+	  * Method responsible for type-check of a '!' expression.
+	  * According to the rules of the language, a '!' expression can be used only with a boolean operator.
 	  */
 	 @Override
 	 public TypeNode visitNode(NotNode n) throws TypeException {		//LE
@@ -258,23 +259,10 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			 throw new TypeException("Non boolean in not",n.getLine());
 		 return new BoolTypeNode();
 	 }
-
+	 
 	 /**
-	  * Method responsible for type-check of an "or" expression.
-	  * According to the rules of the language, an "or" expression can be used only with boolean operators.
-	  */
-	 @Override
-	 public TypeNode visitNode(OrNode n) throws TypeException {		//LE
-		 if (print) printNode(n);
-		 if ( !(isSubtype(visit(n.left), new BoolTypeNode())
-				 && isSubtype(visit(n.right), new BoolTypeNode())) )
-			 throw new TypeException("Incompatible types in or",n.getLine());
-		 return new BoolTypeNode();
-	 }
-
-	 /**
-	  * Method responsible for type-check of an "and" expression.
-	  * According to the rules of the language, an "and" expression can be used only with boolean operators.
+	  * Method responsible for type-check of an '&&' expression.
+	  * According to the rules of the language, an '&&' expression can be used only with boolean operators.
 	  *
 	  */
 	 @Override
@@ -286,24 +274,50 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		 return new BoolTypeNode();
 	 }
 
+	 /**
+	  * Method responsible for type-check of an '||' expression.
+	  * According to the rules of the language, an '||' expression can be used only with boolean operators.
+	  */
 	 @Override
-	 public TypeNode visitNode(BoolNode n) {
-		 if (print) printNode(n,n.val.toString());
+	 public TypeNode visitNode(OrNode n) throws TypeException {		//LE
+		 if (print) printNode(n);
+		 if ( !(isSubtype(visit(n.left), new BoolTypeNode())
+				 && isSubtype(visit(n.right), new BoolTypeNode())) )
+			 throw new TypeException("Incompatible types in or",n.getLine());
 		 return new BoolTypeNode();
 	 }
-
+	 
+	 /**
+	 * Method for the type-check of a integer expression.
+	 */
 	 @Override
 	 public TypeNode visitNode(IntNode n) {
 		 if (print) printNode(n,n.val.toString());
 		 return new IntTypeNode();
 	 }
-
+	 
+	/**
+	 * Method for the type-check of a boolean expression.
+	 */
+	 @Override
+	 public TypeNode visitNode(BoolNode n) {
+		 if (print) printNode(n,n.val.toString());
+		 return new BoolTypeNode();
+	 }
+	 
+	/**
+	 * Method for the type-check of a empty expression.
+	 */
+	 @Override
+	 public TypeNode visitNode(EmptyNode n) {// OO
+		 if (print) printNode(n);
+		 return new EmptyTypeNode();	
+	 }
 	 /**
-	  * Method responsible for type-check of a "call" expression.
+	  * Method responsible for type-check of a 'call' expression.
 	  * According to the rules of the language, the type of call must be functional, otherwise a type-exception must be thrown,
 	  * next, it must check if the expression is compliant with its declaration by checking if it has the same number of parameters and
 	  * if they are are sub-type of the ones declared.
-	  *
 	  */
 	 @Override
 	 public TypeNode visitNode(CallNode n) throws TypeException { //OO
@@ -441,12 +455,6 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	 }
 
 	 @Override
-	 public TypeNode visitNode(EmptyNode n) {// OO
-		 if (print) printNode(n);
-		 return new EmptyTypeNode();				//torna semplicemente EmptyTypeNode
-	 }
-
-	 @Override
 	 public TypeNode visitNode(ArrowTypeNode n) throws TypeException {
 		 if (print) printNode(n);
 		 for (Node par: n.parlist) visit(par);
@@ -467,9 +475,9 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		 return null;
 	 }
 
-	 // STentry (ritorna campo type)
+	 // STentry (return: field type): it is used to avoid null pointer exception
 	 @Override
-	 public TypeNode visitSTentry(STentry entry) throws TypeException {
+	 public TypeNode visitSTentry(STentry entry) throws TypeException {//thrown an incomplete exception; that will be catch
 		 if (print) printSTentry("type");
 		 return ckvisit(entry.type);
 	 }

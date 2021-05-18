@@ -15,7 +15,6 @@ import compiler.lib.*;
  * (incrementing the nesting level when you enter in a new scope and decremented it when you go out)
  * therefore they point to the level in which the program is currently.
  *  
- * @author giuliabrugnatti
  *
  */
 public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
@@ -263,8 +262,6 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 		if (print) printNode(n, "null");
 		return null;
 	}
-
-	////////////////////////////////////////////////////////////////////////////// LANGUAGE EXTENSION
 	/**
 	 * Method that handle a greater-equal expression.
 	 * It just launches a visit on the two nodes expressions.

@@ -4,115 +4,145 @@ push function0
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 push function0
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push function1
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 push function2
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push function3
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 push function2
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push function4
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 50000
 push 40000
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 9997
 lw
 lhp
 sw
 lhp
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 9995
 lw
 lhp
 sw
 lhp
 lhp
-push 1
+push
+1
 add
 shp
+
 push 20000
 push 5000
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 9997
 lw
 lhp
 sw
 lhp
 lhp
-push 1
+push
+1
 add
 shp
+
 lfp
 lfp
 push -7
@@ -125,6 +155,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 1
 add
@@ -151,6 +182,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 0
 add
@@ -223,6 +255,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 0
 add
@@ -236,6 +269,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 1
 add
@@ -262,6 +296,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 0
 add
@@ -270,18 +305,22 @@ js
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 9998
 lw
 lhp
 sw
 lhp
 lhp
-push 1
+push
+1
 add
 shp
+
 label1:
 stm
 sra
@@ -304,6 +343,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 0
 add
@@ -329,6 +369,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 0
 add
@@ -343,6 +384,7 @@ lw
 stm
 ltm
 ltm
+
 lw
 push 1
 add
@@ -351,24 +393,30 @@ js
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 lhp
 sw
 lhp
-push 1
+push
+1
 add
 shp
+
 push 9997
 lw
 lhp
 sw
 lhp
 lhp
-push 1
+push
+1
 add
 shp
+
 label5:
 stm
 sra

@@ -52,7 +52,7 @@ instruction:
 	  | t=STORETM              { codem($t.line, STORETM); } //pop the top of the stack and copy it in the TM register    
 	  | t=LOADFP               { codem($t.line, LOADFP); } //push in the stack the content of the FP register   
 	  | t=STOREFP              { codem($t.line, STOREFP); } //pop the top of the stack and copy it in the FP register    
-	  | t=COPYFP               { codem($t.line, COPYFP); } //copy in the FP register the currest stack pointer    
+	  | t=COPYFP               { codem($t.line, COPYFP); } //copy in the FP register the current stack pointer    
 	  | t=LOADHP               { codem($t.line, LOADHP); } //push in the stack the content of the HP register    
 	  | t=STOREHP              { codem($t.line, STOREHP); } //pop the top of the stack and copy it in the HP register    
 	  | t=PRINT                { codem($t.line, PRINT); } //visualize the top of the stack without removing it   

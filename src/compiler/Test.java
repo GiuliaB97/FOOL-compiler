@@ -9,26 +9,26 @@ import compiler.exc.*;
 import visualsvm.*;//needed from the visual svm 
 import java.nio.file.*;//needed from the visual svm 
 /**
- * The aim of the project: takes a program written in FOOL language and manage to execute it.
- * The process to pass from a FOOL's program to an executable one involves several steps which involves 
- * two main entities the compiler and the SVM.
- * Their working flow can be summarized as follow:
+ * Aim of the project: it takes a program written in FOOL language and manage to execute it.
+ * The process to pass from a FOOL's program to an executable one involves several steps which 
+ * are handled by two main entities: the compiler and the SVM.
  * 
- * ----here start the compiler's works
- * 1. The program of the file.fool is converted in a stream of chars;
- * 2. The aforementioned stream is taken from the lexer (class generated automatically by antlr) 
+ * Their working flow can be summarized as follow:
+ * ----here the compiler's works starts:
+ * 1. The program (file.fool) is converted in a stream of chars;
+ * 2. The aforementioned stream is taken from the lexer (class generated automatically by ANTLR); 
  * 		which transforms it in a stream of token;
- * 3. That latter stream is passed to the parser  (class generated automatically by antlr) 
- * 		which generate the ST;
+ * 3. That latter stream is passed to the parser (class generated automatically by ANTLR) 
+ * 		which generate the ST (Syntactic Analysis: input: ST, output: AST);
  * 4. The ASTGenerationVisitor visits the ST, in order to create an abstract representation of the tree (AST),
  * 		which will be used by the other visitor to check the correctness of the program;
  * 5.a SymbolTableVisitor: takes the AST and uses it to match declarations with the corresponding usages.
  * 5.b TypeCheckVisitor: takes the AST and uses it to check if the the rules of the FOOL language are respected,
- * 						the result of its visit is used by the PrintEASTVisitor to print a representation of the program ;
+ * 						the result of its visit is used by the PrintEASTVisitor to print a representation of the program;
  * ----end front-end phases: if you arrive there, then the tree is complete and you can start to produce the code;
  * 5.c CodeGenerationVisitor: produce an intermediate code representation (fool.asm);
  * 
- * ---- here start the work of SVM
+ * ---- here the work of SVM starts:
  * 6. The intermediate representation is converted in a new stream of chars
  * 7. The chars stream is used from the lexer of the SVM to produce a stream of token;
  * 8. The token's stream is taken from the SVM parser which produces the assembly code,
@@ -37,7 +37,7 @@ import java.nio.file.*;//needed from the visual svm
 public class Test {
     public static void main(String[] args) throws Exception {
    			
-    	String fileName = "bankloan.fool";
+    	String fileName = "quicksort_ho.fool";
 
     	CharStream chars = CharStreams.fromFileName(fileName);
     	FOOLLexer lexer = new FOOLLexer(chars);

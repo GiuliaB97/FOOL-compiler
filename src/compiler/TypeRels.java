@@ -8,8 +8,6 @@ import compiler.AST.*;
 import compiler.lib.*;
 /**
  * Class responsible for subtypes checks.
- * 
- * @author giuliabrugnatti
  *
  */
 public class TypeRels {
@@ -18,6 +16,7 @@ public class TypeRels {
 	
 	/**
 	 * Method that checks if the first expression is subtype of the second.
+	 * -
 	 * 
 	 * @param a is a type node
 	 * @param b is a type node
@@ -42,36 +41,24 @@ public class TypeRels {
 			}
 			return false;
 		}
-		if (a instanceof MethodTypeNode && b instanceof MethodTypeNode)	{// it checks the correct overriding of the methods
-			ArrowTypeNode methodA = ((MethodTypeNode)a).fun;
-			ArrowTypeNode methodB = ((MethodTypeNode)b).fun;
-			if(methodA.parlist.size() != methodB.parlist.size()) {//they must have the same number of parameters
-				return false;
-			}else if(!isSubtype(methodA.ret, methodB.ret)) {// covariance on the return types: a.ret must be <= b.ret
-				return false;
-			}
-			for(int i = 0; i < methodA.parlist.size(); i++) {// contravariance on the parameters types: a.par_i >= b.par_i
-				if(!isSubtype(methodB.parlist.get(i), methodB.parlist.get(i))) {
-					return false;
-				}
-			}
-			return true;
-		}
+		
+		if (a instanceof ArrowTypeNode && b instanceof ArrowTypeNode){// it checks the correct overriding of the methods
+			ArrowTypeNode arrowA =(ArrowTypeNode) a;
+			ArrowTypeNode arrowB =(ArrowTypeNode) b;
 
-		if (a instanceof ArrowTypeNode && b instanceof ArrowTypeNode) {
-			ArrowTypeNode arrowA = (ArrowTypeNode) a;
-			ArrowTypeNode arrowB = (ArrowTypeNode) b;
 			if(arrowA.parlist.size() != arrowB.parlist.size()) {//they must have the same number of parameters
 				return false;
 			}else if(!isSubtype(arrowA.ret, arrowB.ret)) {// covariance on the return types: a.ret must be <= b.ret
 				return false;
 			}
 			for(int i = 0; i < arrowA.parlist.size(); i++) {// contravariance on the parameters types: a.par_i >= b.par_i
-				if(!isSubtype(arrowB.parlist.get(i), arrowA.parlist.get(i))) 
+				if(!isSubtype(arrowB.parlist.get(i), arrowB.parlist.get(i))) {
 					return false;
+				}
 			}
 			return true;
 		}
+		
 		// valuta se il tipo "a" e' <= al tipo "b", dove "a" e "b" sono tipi di base: IntTypeNode o BoolTypeNode
 		return a.getClass().equals(b.getClass()) || ((a instanceof BoolTypeNode) && (b instanceof IntTypeNode));
 	}
@@ -83,9 +70,9 @@ public class TypeRels {
 	 * @return null if they do not have a common ancestor, or the common ancestor type node
 	 */
 	public static TypeNode lowestCommonAncestor(TypeNode a, TypeNode b) {
-		if (a instanceof EmptyTypeNode && b instanceof RefTypeNode) {//MOD OO: EmptyTypeNode subtype of RefTypeNode (no matter which is it)
+		if (a instanceof EmptyTypeNode && b instanceof RefTypeNode) {//OO: EmptyTypeNode subtype of RefTypeNode (no matter which is it)
 			return b;
-		}else if (b instanceof EmptyTypeNode && a instanceof RefTypeNode ) {//MOD OO: EmptyTypeNode subtype of RefTypeNode (no matter which is it)
+		}else if (b instanceof EmptyTypeNode && a instanceof RefTypeNode ) {//OO: EmptyTypeNode subtype of RefTypeNode (no matter which is it)
 			return a;
 		}
 		
@@ -128,7 +115,6 @@ public class TypeRels {
 							return null;
 						}
 					}
-
 					return new ArrowTypeNode(parTypes,retType);
 				}
 			}
