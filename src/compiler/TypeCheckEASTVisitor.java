@@ -212,7 +212,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 			throw new TypeException("Cannot compare functional types ", n.getLine());
 		if ( !(isSubtype(visit(n.left), visit(n.right)) || isSubtype(visit(n.right), visit(n.left))) )
 			throw new TypeException("Incompatible types in equal",n.getLine());
-		return new  BoolTypeNode();//ritorna un boolean scema
+		return new  BoolTypeNode();
 	}
 
 	/**
@@ -236,7 +236,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	 * To be compliant with the type rules of the language an  '==' expression 
 	 * cannot be used with functional types and it must be used only if 
 	 * its operators are one sub-type of the other.
-	 */	@Override
+	 */	
+	@Override
 	 public TypeNode visitNode(EqualNode n) throws TypeException {//HO
 		 if (print) printNode(n);
 		 TypeNode l = visit(n.left);
@@ -268,7 +269,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	 @Override
 	 public TypeNode visitNode(AndNode n) throws TypeException {		//LE
 		 if (print) printNode(n);
-		 if ( !(isSubtype(visit(n.left), new BoolTypeNode())			//uguale al controllo sulle operazioni ma, sui bool
+		 if ( !(isSubtype(visit(n.left), new BoolTypeNode())			
 				 && isSubtype(visit(n.right), new BoolTypeNode())) )
 			 throw new TypeException("Incompatible types in or",n.getLine());
 		 return new BoolTypeNode();
@@ -313,6 +314,7 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 		 if (print) printNode(n);
 		 return new EmptyTypeNode();	
 	 }
+	 
 	 /**
 	  * Method responsible for type-check of a 'call' expression.
 	  * According to the rules of the language, the type of call must be functional, otherwise a type-exception must be thrown,
@@ -400,8 +402,8 @@ public class TypeCheckEASTVisitor extends BaseEASTVisitor<TypeNode,TypeException
 	 }
 
 	 /**
-	  * Method responsible of the type-check of an "if-then-else" expression.
-	  * According to the type rules of the program an if-then-else expression respect the type rules if
+	  * Method responsible of the type-check of an 'if-then-else' expression.
+	  * According to the type rules of the program an 'if-then-else' expression respect the type rules if
 	  * its condition is a boolean type and its expressions are one sub-type of the other or, 
 	  * they have a lowest common ancestors.
 	  */

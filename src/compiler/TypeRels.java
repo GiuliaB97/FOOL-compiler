@@ -15,7 +15,7 @@ public class TypeRels {
 	static Map<String,String> superType;//mappa l'ID di classe nell'ID della sua superclasse; 
 	
 	/**
-	 * Method that checks if the first expression is subtype of the second.
+	 * Method that checks if the first expression is sub-type of the second.
 	 * -
 	 * 
 	 * @param a is a type node
