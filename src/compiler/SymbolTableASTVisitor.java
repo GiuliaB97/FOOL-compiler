@@ -416,7 +416,7 @@ public class SymbolTableASTVisitor extends BaseASTVisitor<Void,VoidException> {
 				} else {							//the old STentry is thrown away and a new one takes its place(offset must remain the same of the old STentry)
 					field.offset = virtualTable.get(field.id).offset;
 					virtualTable.put(field.id, new STentry(nestingLevel,field.getType(),field.offset));
-					((ClassTypeNode)hm.get(n.id).type).	//per i campi aggiorno arrayFields settando la posizione a -offset-1 al tipo(nostro layout primo campo è -1)
+					((ClassTypeNode)hm.get(n.id).type).	//fields'position: -offset-1 ( in our layout the first field is at -offset -1)
 									allFields.set(-field.offset-1, field.getType());
 				}
 			} else {
