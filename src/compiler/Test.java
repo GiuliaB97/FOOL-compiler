@@ -38,7 +38,7 @@ import java.nio.file.*;//needed from the visual svm
 public class Test {
     public static void main(String[] args) throws Exception {
    			
-    	String fileName = "resources/quicksort.fool";
+    	String fileName = "resources/bankloan.fool";
 
     	CharStream chars = CharStreams.fromFileName(fileName);
     	FOOLLexer lexer = new FOOLLexer(chars);

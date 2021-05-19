@@ -206,7 +206,6 @@ lw
 stm
 sra
 pop
-sfp
 ltm
 lra
 js
@@ -222,7 +221,6 @@ lw
 stm
 sra
 pop
-sfp
 ltm
 lra
 js
@@ -238,7 +236,6 @@ lw
 stm
 sra
 pop
-sfp
 ltm
 lra
 js
@@ -326,7 +323,6 @@ stm
 sra
 pop
 pop
-sfp
 ltm
 lra
 js
@@ -422,7 +418,6 @@ stm
 sra
 pop
 pop
-sfp
 ltm
 lra
 js

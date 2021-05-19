@@ -15,7 +15,8 @@ import java.util.List;
  */
 
 /*
- * AL: frame che mi racchiude sintatticamente
+ * CL: frame che mi racchiude sintatticamente
+ * AL: frame della mia dichiarazione
  * Dispatch pointer in AR dell'ambiente globale--> è reperibile all'offset della classe-->valore iniziale fp
  * HP (heap pointer)
  * FP (frame pointer): ha il ptr all'AR--->fp of the caller=cl ; fp punta alla posizione di riferimento del frame in cima allo stack
@@ -79,7 +80,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	}
 
 	/**
-	 * Method for the generation of a function definition.
+	 * Method for the generation of a function declaration.
 	 * It is responsible for the termination of the AR of the function
 	 * (which had been partially build from with the visit of the callNode)
 	 */
@@ -135,7 +136,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
 
 	/**
-	 * Method for the generation of a method definition.
+	 * Method for the generation of a method declaration.
 	 */
 	@Override
 	public String visitNode(MethodNode n) {
@@ -162,7 +163,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 						"sra", 			// pop the top of the stack and copy it in the RA register: store the return address, it will be used to come back to the caller
 						"pop", 			// remove AL from stack (last thing allocated by the caller)
 						popParl, 		// remove parameters from stack (allocated by the caller before the call)
-						"sfp", 			// set $fp to popped value (ControlLink: it was needed to reset the FramePointer to the caller frame to make it able to continue its execution)
 						"ltm", 			// push in the stack the content of the TM register (function result)
 						"lra", 			// push in the stack the content of the RA register (return address) 
 						"js"  			// jump to to popped address (caller frame)
@@ -172,11 +172,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 	}
 
 	/**
-	 * Method for the generation of a class definition.
+	 * Method for the generation of a class declaration.
 	 */
 	@Override
-	public String visitNode(ClassNode n) {
-		if (print) printNode(n,n.id);
+	public String visitNode(ClassNode n) {		if (print) printNode(n,n.id);
 		if(n.superID!=null) {
 			dispatchTables.add(new ArrayList<>(dispatchTables.get(-n.superEntry.offset-2))); // The whole dispatch table of the superclass must be copied; 	la individuo in base a offset classe da cui eredito in "superEntry"per layout ambiente globale: posizione -offset-2 (a offset -1 credo ci sia l'indirizzo della funzione)	di dispatchTables
 		} else {
@@ -447,7 +446,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		String argCode = null, getAR = null;
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));// it creates code for parameter expressions in reversed order
 		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");// it finds the AL (ptr to frame of function's declaration)
-		if(n.entry.type instanceof MethodTypeNode) {//OO: call of a local method (whithin another method of the object)
+		if(n.entry.type instanceof MethodTypeNode) {//OO: call of a local method (within another method of the object)
 			return nlJoin(
 					"lfp", 			// push frame pointer: CL: pointer to caller's frame(reference point) used to ascend to declaration AR: it is needed to retrieve the parameters
 					argCode, 		// generate code for argument expressions in reversed order (from N to 1)
@@ -460,7 +459,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 					"js" 			// jump to popped address[of the subroutine] (saving address of subsequent instruction in $ra)
 					);
 		} else {
-			return nlJoin(
+			return nlJoin( 
 					"lfp", 		  // load CL (ptr to frame of function "id" caller)
 					argCode, 	  // generate code for argument expressions in reversed order
 					"lfp", getAR, // retrieve address of frame containing "id" declaration, by following the static chain (of AL)
@@ -509,7 +508,7 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		for (int i=n.arglist.size()-1;i>=0;i--) argCode=nlJoin(argCode,visit(n.arglist.get(i)));
 		for (int i = 0;i<n.nl-n.entry.nl;i++) getAR=nlJoin(getAR,"lw");	// it retrieves the correct AR of (object) declaration.
 		return nlJoin(
-				"lfp", 			// load Control Link (pointer to frame of function "id" caller)
+				"lfp", 			// load Control Link
 				argCode, 		// generate code for argument expressions in reversed order
 				"lfp", getAR, 	// retrieve address of frame containing "id" declaration by following the static chain (of Access Links)
 
@@ -546,10 +545,10 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 		return nlJoin(
 				argCode,
 				putArgsOnHeap,
-				"push "+(ExecuteVM.MEMSIZE+n.entry.offset),// push dispatch pointer's address
+				"push "+(ExecuteVM.MEMSIZE+ n.entry.offset),// push dispatch pointer's address
 				"lw",		// put the dispatch pointer on top of the stack
 				"lhp",		// push hp on stack
-				"sw",		// store he dispatch pointer in hp
+				"sw",		// store the dispatch pointer in hp
 				"lhp",		// copy object pointer (to be returned) on the stack; put hp on stack
 				incrementHP
 				);
