@@ -58,7 +58,7 @@ public class TypeRels {
 				return false;
 			}
 			for(int i = 0; i < arrowA.parlist.size(); i++) {// contravariance on the parameters types: a.par_i >= b.par_i
-				if(!isSubtype(arrowB.parlist.get(i), arrowB.parlist.get(i))) {
+				if(!isSubtype(arrowB.parlist.get(i), arrowA.parlist.get(i))) {
 					return false;
 				}
 			}

@@ -528,7 +528,6 @@ public class CodeGenerationASTVisitor extends BaseASTVisitor<String, VoidExcepti
 
 	/**
 	 * Method for the generation of an object instantiation.
-	 * 
 	 */
 	@Override
 	public String visitNode(NewNode n) {//OO
